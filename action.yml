@@ -1,0 +1,51 @@
+name: Spindle report
+description: Send this job's summary, test results, attestations and artifacts to Spindle, authenticated with GitHub OIDC (no secrets).
+author: SCRT-HQ
+branding:
+  icon: activity
+  color: purple
+inputs:
+  summary:
+    description: Markdown to send. Default - the summaries earlier steps of this job wrote to $GITHUB_STEP_SUMMARY.
+    required: false
+  summary-file:
+    description: Path to a markdown file to send instead.
+    required: false
+  name:
+    description: Report name within the job (several steps can report separately).
+    required: false
+    default: default
+  job-name:
+    description: Job identifier. Default - GITHUB_JOB.
+    required: false
+  matrix:
+    description: In matrix jobs pass toJSON(matrix) so each leg keeps its own report.
+    required: false
+  junit:
+    description: Globs of JUnit XML files, summed into one test-results attestation.
+    required: false
+  artifacts:
+    description: Globs of files to upload (newline or comma separated).
+    required: false
+  attestations:
+    description: Attestations as inline JSON or a path to a JSON file (kinds test-results, coverage, sbom, scan, custom).
+    required: false
+  spindle-url:
+    description: Spindle API URL.
+    required: false
+    default: https://api.spindle.scrthq.com
+  audience:
+    description: OIDC audience. Default - the origin of spindle-url.
+    required: false
+  fail-on-error:
+    description: Fail the step when the report cannot be sent.
+    required: false
+    default: 'false'
+outputs:
+  report-id:
+    description: The Spindle report id.
+  report-url:
+    description: Link to the pipeline run in Spindle.
+runs:
+  using: node24
+  main: dist/index.js
