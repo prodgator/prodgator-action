@@ -141,7 +141,7 @@ An upload that would cross a limit is skipped with a warning in the step log; th
 
 ## How summaries are collected
 
-When you don't pass `summary` or `summary-file`, the action reads the sibling `step_summary_*` files the runner writes next to its own `$GITHUB_STEP_SUMMARY` for every step that ran earlier in the job, and combines them. This relies on the runner's current file layout, not a published API (GitHub does not expose job summaries any other way), so a runner change could silently break it. If that happens, `summary-file` still works, and the step logs a debug line when no summary was found.
+When you don't pass `summary` or `summary-file`, the action reads the sibling `step_summary_*-scrubbed` files the runner writes next to its own `$GITHUB_STEP_SUMMARY` for every step that ran earlier in the job, and combines them. These are the secret-masked copies GitHub shows on the run page; the raw files beside them are ignored, so each step's summary is sent once and with secrets masked. This relies on the runner's current file layout, not a published API (GitHub does not expose job summaries any other way), so a runner change could silently break it. If that happens, `summary-file` still works, and the step logs a debug line when no summary was found.
 
 ## Troubleshooting
 

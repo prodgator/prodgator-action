@@ -45892,6 +45892,7 @@ function truncateUtf8(text, maxBytes) {
   while (end > 0 && (bytes[end] & 192) === 128) end--;
   return { text: bytes.subarray(0, end).toString("utf8") + MARKER, truncated: true };
 }
+var SCRUBBED = "-scrubbed";
 async function collectJobSummary(env = process.env) {
   const own = env.GITHUB_STEP_SUMMARY;
   if (!own) return null;
@@ -45903,7 +45904,8 @@ async function collectJobSummary(env = process.env) {
     core2.debug(`no step summary directory at ${dir}`);
     return null;
   }
-  const files = await Promise.all(names.filter((n) => n.startsWith("step_summary_") && n !== (0, import_path.basename)(own)).map(async (n) => ({ n, stat: await import_fs.promises.stat((0, import_path.join)(dir, n)) })));
+  const ownName = (0, import_path.basename)(own);
+  const files = await Promise.all(names.filter((n) => n.startsWith("step_summary_") && n.endsWith(SCRUBBED) && n !== ownName + SCRUBBED).map(async (n) => ({ n, stat: await import_fs.promises.stat((0, import_path.join)(dir, n)) })));
   const parts = [];
   for (const f of files.filter((f2) => f2.stat.isFile() && f2.stat.size > 0).sort((a, b) => a.stat.mtimeMs - b.stat.mtimeMs || a.n.localeCompare(b.n))) {
     parts.push((await import_fs.promises.readFile((0, import_path.join)(dir, f.n), "utf8")).trim());
