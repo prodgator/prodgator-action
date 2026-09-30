@@ -45841,10 +45841,20 @@ var import_path4 = require("path");
 
 // src/inputs.ts
 var core = __toESM(require_core());
-var DEFAULT_SPINDLE_URL = "https://api.spindle.scrthq.com";
-var audienceFor = (spindleUrl) => new URL(spindleUrl).origin;
+var DEFAULT_PRODGATOR_URL = "https://api.prodgator.io";
+var audienceFor = (prodgatorUrl) => new URL(prodgatorUrl).origin;
 var list = (v) => v.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
 var orNull = (v) => v.trim() ? v : null;
+var stripSlash = (v) => v.replace(/\/+$/, "");
+function resolveUrl(get, warn) {
+  const prodgatorRaw = get("prodgator-url").trim();
+  const spindleRaw = get("spindle-url").trim();
+  if (prodgatorRaw && spindleRaw && stripSlash(prodgatorRaw) !== stripSlash(spindleRaw)) {
+    throw new Error("prodgator-url and spindle-url are both set to different values. spindle-url is deprecated; remove it and keep prodgator-url.");
+  }
+  if (!prodgatorRaw && spindleRaw) warn("spindle-url is deprecated; use prodgator-url instead.");
+  return stripSlash(prodgatorRaw || spindleRaw || DEFAULT_PRODGATOR_URL);
+}
 function matrix(raw) {
   if (!raw.trim()) return null;
   let parsed;
@@ -45857,11 +45867,11 @@ function matrix(raw) {
   const entries = Object.entries(parsed).map(([k, v]) => [k, v === null || ["string", "number", "boolean"].includes(typeof v) ? v : JSON.stringify(v)]);
   return entries.length ? Object.fromEntries(entries) : null;
 }
-function readInputs(get = (n) => core.getInput(n), env = process.env) {
-  const spindleUrl = (get("spindle-url") || DEFAULT_SPINDLE_URL).replace(/\/+$/, "");
-  const u = new URL(spindleUrl);
+function readInputs(get = (n) => core.getInput(n), env = process.env, warn = (m) => core.warning(m)) {
+  const prodgatorUrl = resolveUrl(get, warn);
+  const u = new URL(prodgatorUrl);
   const local = u.hostname === "localhost" || u.hostname === "127.0.0.1";
-  if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) throw new Error("spindle-url must use https");
+  if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) throw new Error("prodgator-url must use https");
   const failRaw = get("fail-on-error").trim().toLowerCase();
   if (failRaw && failRaw !== "true" && failRaw !== "false") core.warning(`fail-on-error "${failRaw}" is not true or false; using false`);
   return {
@@ -45873,8 +45883,8 @@ function readInputs(get = (n) => core.getInput(n), env = process.env) {
     junit: list(get("junit")),
     artifacts: list(get("artifacts")),
     attestations: orNull(get("attestations")),
-    spindleUrl,
-    audience: get("audience").trim() || audienceFor(spindleUrl),
+    prodgatorUrl,
+    audience: get("audience").trim() || audienceFor(prodgatorUrl),
     failOnError: failRaw === "true"
   };
 }
@@ -45884,7 +45894,7 @@ var import_fs = require("fs");
 var import_path = require("path");
 var core2 = __toESM(require_core());
 var MAX_SUMMARY_BYTES = 1024 * 1024;
-var MARKER = "\n\n\u2026(truncated by spindle-report)";
+var MARKER = "\n\n\u2026(truncated by prodgator-report)";
 function truncateUtf8(text, maxBytes) {
   const bytes = Buffer.from(text, "utf8");
   if (bytes.length <= maxBytes) return { text, truncated: false };
@@ -46197,7 +46207,7 @@ async function postJson(url, body, audience, deps) {
       const token = await deps.getToken(audience);
       res = await doFetch(url, {
         method: "POST",
-        headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "user-agent": "spindle-report-action/1" },
+        headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "user-agent": "prodgator-report-action/1" },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(3e4)
       });
@@ -46302,7 +46312,7 @@ async function run(deps = {}) {
     [...scanned.warnings, ...globbed.warnings].forEach((w) => c.warning(w));
     const files = mergeFiles(scanned.files, globbed.files, (w) => c.warning(w));
     const client = { getToken: (aud) => c.getIDToken(aud), fetch: deps.fetch, sleep: deps.sleep };
-    const res = await sendReport(inputs.spindleUrl, buildIngestRequest({ inputs, env, summary, attestations, files }), inputs.audience, client);
+    const res = await sendReport(inputs.prodgatorUrl, buildIngestRequest({ inputs, env, summary, attestations, files }), inputs.audience, client);
     for (const w of res.warnings) c.warning(WARNINGS[w] ?? w);
     for (const s of res.skipped) {
       if (s.reason === "already_uploaded") c.debug(`${s.path} was already uploaded`);
@@ -46321,7 +46331,7 @@ async function run(deps = {}) {
       }
     }
     if (uploaded.length) {
-      const done = await completeReport(inputs.spindleUrl, res.reportId, uploaded, inputs.audience, client);
+      const done = await completeReport(inputs.prodgatorUrl, res.reportId, uploaded, inputs.audience, client);
       for (const r of done.results.filter((r2) => r2.status !== "uploaded")) c.warning(`artifact ${r.artifactId} was ${r.status}${r.reason ? `: ${r.reason}` : ""}`);
     }
     c.setOutput("report-id", res.reportId);

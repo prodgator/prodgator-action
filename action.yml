@@ -1,5 +1,5 @@
-name: Spindle report
-description: Send this job's summary, test results, attestations and artifacts to Spindle, authenticated with GitHub OIDC (no secrets).
+name: Prodgator report
+description: Send this job's summary, test results, attestations and artifacts to Prodgator, authenticated with GitHub OIDC (no secrets).
 author: SCRT-HQ
 branding:
   icon: activity
@@ -30,12 +30,15 @@ inputs:
   attestations:
     description: Attestations as inline JSON or a path to a JSON file (kinds test-results, coverage, sbom, scan, custom).
     required: false
-  spindle-url:
-    description: Spindle API URL.
+  prodgator-url:
+    description: Prodgator API URL.
     required: false
-    default: https://api.spindle.scrthq.com
+    default: https://api.prodgator.io
+  spindle-url:
+    description: Deprecated alias for prodgator-url. Setting both to different values fails the step.
+    required: false
   audience:
-    description: OIDC audience. Default - the origin of spindle-url.
+    description: OIDC audience. Default - the origin of the URL in use.
     required: false
   fail-on-error:
     description: Fail the step when the report cannot be sent.
@@ -43,9 +46,9 @@ inputs:
     default: 'false'
 outputs:
   report-id:
-    description: The Spindle report id.
+    description: The Prodgator report id.
   report-url:
-    description: Link to the pipeline run in Spindle.
+    description: Link to the pipeline run in Prodgator.
 runs:
   using: node24
   main: dist/index.js

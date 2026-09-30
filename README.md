@@ -1,6 +1,6 @@
-# Spindle report
+# Prodgator report
 
-Send a GitHub Actions job's summary, test results, coverage, SBOMs, scan results, custom evidence and artifacts to [Spindle](https://spindle.scrthq.com). Authentication is GitHub OIDC: no API key or secret to create or rotate.
+Send a GitHub Actions job's summary, test results, coverage, SBOMs, scan results, custom evidence and artifacts to [Prodgator](https://app.prodgator.io). Authentication is GitHub OIDC: no API key or secret to create or rotate.
 
 ## Quick start
 
@@ -23,7 +23,7 @@ jobs:
           artifacts: 'dist/**'
 ```
 
-`permissions: id-token: write` lets the action mint a short-lived OIDC token; without it the step fails with a message telling you to add it. `if: always()` sends the report even when an earlier step in the job fails, so a broken build still shows its test results in Spindle.
+`permissions: id-token: write` lets the action mint a short-lived OIDC token; without it the step fails with a message telling you to add it. `if: always()` sends the report even when an earlier step in the job fails, so a broken build still shows its test results in Prodgator.
 
 ## Inputs
 
@@ -37,16 +37,17 @@ jobs:
 | `junit` | (none) | Globs of JUnit XML files, summed into one `test-results` attestation. |
 | `artifacts` | (none) | Globs of files to upload (newline or comma separated). |
 | `attestations` | (none) | Attestations as inline JSON or a path to a JSON file. See Attestation kinds below. |
-| `spindle-url` | `https://api.spindle.scrthq.com` | Spindle API URL. Point this at `https://api.spindle.dev.scrthq.com` or a self-hosted deployment. |
-| `audience` | the origin of `spindle-url` | OIDC audience. Only set this if you know you need something other than the API origin. |
+| `prodgator-url` | `https://api.prodgator.io` | Prodgator API URL. Point this at `https://api.prodgator.dev` or a self-hosted deployment. |
+| `spindle-url` | (none) | Deprecated alias for `prodgator-url`, kept for the v1 line. Setting both to different values fails the step with a clear error; setting only `spindle-url` still works but logs a deprecation notice. |
+| `audience` | the origin of the URL in use | OIDC audience. Only set this if you know you need something other than the API origin. |
 | `fail-on-error` | `false` | Fail the step when the report cannot be sent, instead of warning and continuing. |
 
 ## Outputs
 
 | Name | Description |
 |---|---|
-| `report-id` | The Spindle report id. |
-| `report-url` | Link to the pipeline run in Spindle. |
+| `report-id` | The Prodgator report id. |
+| `report-url` | Link to the pipeline run in Prodgator. |
 
 ## Attestation kinds
 
@@ -60,7 +61,7 @@ with:
     ]
 ```
 
-Status (`pass`, `fail`, `warn`, `info`) is derived by Spindle from the data for every kind except `custom`, which sets its own.
+Status (`pass`, `fail`, `warn`, `info`) is derived by Prodgator from the data for every kind except `custom`, which sets its own.
 
 **test-results** (also produced automatically from `junit`):
 
@@ -94,9 +95,9 @@ Status (`pass`, `fail`, `warn`, `info`) is derived by Spindle from the data for 
 
 A missing or empty file, or one outside the workspace, is skipped with a warning and the attestation is sent without the link.
 
-Spindle reads findings from SARIF 2.1.0, CycloneDX JSON and SPDX JSON files. Run your scanner with SARIF output (for example `grype -o sarif` or `trivy --format sarif`) and use `"format": "sarif"`. `grype-json` and `trivy-json` are still accepted, but those files are only attached to the report: Spindle reads no findings from them. See [Scanner Setup (SARIF)](https://docs.spindle.scrthq.com/guides/security-scanners) for examples with ASH, Grype, Trivy, Semgrep, Checkov and Syft.
+Prodgator reads findings from SARIF 2.1.0, CycloneDX JSON and SPDX JSON files. Run your scanner with SARIF output (for example `grype -o sarif` or `trivy --format sarif`) and use `"format": "sarif"`. `grype-json` and `trivy-json` are still accepted, but those files are only attached to the report: Prodgator reads no findings from them. See [Scanner Setup (SARIF)](https://docs.prodgator.io/guides/security-scanners) for examples with ASH, Grype, Trivy, Semgrep, Checkov and Syft.
 
-**custom** (status is required, since Spindle has no rule for it):
+**custom** (status is required, since Prodgator has no rule for it):
 
 ```json
 { "kind": "custom", "name": "change-ticket", "status": "warn", "data": { "title": "Change ticket", "details": { "id": "CHG-1042" } } }
@@ -117,11 +118,11 @@ steps:
       matrix: ${{ toJSON(matrix) }}
 ```
 
-Without it, two legs of the same job reporting under the same `name` replace each other and Spindle warns in the step log. With it, each leg keeps its own report.
+Without it, two legs of the same job reporting under the same `name` replace each other and Prodgator warns in the step log. With it, each leg keeps its own report.
 
 ## Limits
 
-Spindle enforces these regardless of what the action sends:
+Prodgator enforces these regardless of what the action sends:
 
 - 1 MiB per job summary
 - 20 attestations per report
@@ -134,9 +135,9 @@ An upload that would cross a limit is skipped with a warning in the step log; th
 ## Security
 
 - OIDC only. No API key, no secret, nothing to rotate.
-- The repository must belong to a GitHub organization or user connected to exactly one Spindle organization through the Spindle GitHub App. A repository under an unlinked owner logs a warning (`REPO_NOT_LINKED`) and the job still succeeds.
+- The repository must belong to a GitHub organization or user connected to exactly one Prodgator organization through the Prodgator GitHub App. A repository under an unlinked owner logs a warning (`REPO_NOT_LINKED`) and the job still succeeds.
 - Reports from `pull_request_target` and `workflow_run` events, and from a `pull_request` whose head repository is a fork, are accepted but marked **untrusted**. Release policies count only trusted attestations by default.
-- Spindle members download report artifacts only when signed in to the linked Spindle organization.
+- Prodgator members download report artifacts only when signed in to the linked Prodgator organization.
 - The action uploads only files inside the workspace. A matched symlink whose target is outside the workspace is skipped, and nothing under a `.git` directory is uploaded (`actions/checkout` stores the job token in `.git/config`).
 
 ## How summaries are collected
@@ -145,7 +146,7 @@ When you don't pass `summary` or `summary-file`, the action reads the sibling `s
 
 ## Troubleshooting
 
-- **`REPO_NOT_LINKED`**: the repository's owner is not connected to a Spindle organization, or the installation belongs to a different one. Install and link the Spindle GitHub App for this owner.
-- **`RUN_NOT_FOUND`, then the action succeeds anyway**: Spindle had not yet received this run's webhook when the report arrived. The action retries for about 90 seconds; if it still fails, the job step warns (or fails, with `fail-on-error: true`) but does not block the workflow.
+- **`REPO_NOT_LINKED`**: the repository's owner is not connected to a Prodgator organization, or the installation belongs to a different one. Install and link the Prodgator GitHub App for this owner.
+- **`RUN_NOT_FOUND`, then the action succeeds anyway**: Prodgator had not yet received this run's webhook when the report arrived. The action retries for about 90 seconds; if it still fails, the job step warns (or fails, with `fail-on-error: true`) but does not block the workflow.
 - **"Add `permissions: id-token: write`..."**: the job or workflow is missing OIDC permissions. Add `permissions: id-token: write` at the job or workflow level.
 - **GitHub Enterprise Server with a custom OIDC issuer**: not supported yet. The action expects `github.com`'s OIDC issuer.
