@@ -71,13 +71,8 @@ With several build and test jobs, add a `report` job with `needs: [build, test]`
 | `attestations` | (none) | Attestations as inline JSON or a path to a JSON file. See Attestation kinds below. |
 | `ownership` | (none) | Path of a `CODEOWNERS` file or a Prodgator ownership JSON file, sent for code owners rules on pull requests. See Ownership reports below. |
 | `prodgator-url` | `https://api.prodgator.io` | Prodgator API URL. Point this at `https://api.prodgator.dev` or a self-hosted deployment. |
-| `spindle-url` | (none) | Old name of `prodgator-url`, kept as a deprecated alias for the v1 line. Used only when `prodgator-url` is empty, and logs a deprecation notice. |
 | `audience` | the origin of the URL in use | OIDC audience. Only set this if you know you need something other than the API origin. |
 | `fail-on-error` | `false` | Fail the step when the report cannot be sent, instead of warning and continuing. |
-
-### Renamed input
-
-`spindle-url` was the action's original input name and is now `prodgator-url`. Both still work: `prodgator-url` wins when both are set, and `spindle-url` alone still works but logs a deprecation notice in the step log. Move to `prodgator-url` when convenient; `spindle-url` stays supported through the v1 line.
 
 This action is one of three ways to send a Prodgator run report: the [GitLab CI/CD component](https://gitlab.com/prodgator/prodgator-component) for GitLab CI, and the [Bitbucket Pipe](https://bitbucket.org/prodgator/prodgator-pipe) for Bitbucket Pipelines, cover the other two CI systems with the same report.
 

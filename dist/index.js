@@ -26499,10 +26499,7 @@ function matrix(raw) {
   return entries.length ? Object.fromEntries(entries) : null;
 }
 function readInputs(get = (n) => getInput(n), env = process.env) {
-  const legacy = get("spindle-url").trim();
-  const chosen = get("prodgator-url").trim();
-  if (!chosen && legacy) warning("spindle-url is deprecated; use prodgator-url (same value).");
-  const prodgatorUrl = (chosen || legacy || DEFAULT_PRODGATOR_URL).replace(/\/+$/, "");
+  const prodgatorUrl = (get("prodgator-url").trim() || DEFAULT_PRODGATOR_URL).replace(/\/+$/, "");
   const u = new URL(prodgatorUrl);
   const local = u.hostname === "localhost" || u.hostname === "127.0.0.1";
   if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) throw new Error("prodgator-url must use https");
@@ -31098,7 +31095,7 @@ async function run(deps = {}) {
       getToken: (aud) => c.getIDToken(aud),
       fetch: deps.fetch,
       sleep: deps.sleep,
-      userAgent: `prodgator-report-action/${true ? "1.2.0" : "dev"}`
+      userAgent: `prodgator-report-action/${true ? "1.3.0" : "dev"}`
     };
     const request = buildIngestRequest({ job: { name: inputs.jobName, matrix: inputs.matrix, runner: env.RUNNER_NAME || null }, name: inputs.name, summary: summary2, attestations, files });
     const res = await sendReport(inputs.prodgatorUrl, "github", request, inputs.audience, client);

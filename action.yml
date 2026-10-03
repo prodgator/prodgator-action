@@ -36,10 +36,6 @@ inputs:
   prodgator-url:
     description: Prodgator API URL. Default https://api.prodgator.io.
     required: false
-  spindle-url:
-    description: Old name of prodgator-url.
-    required: false
-    deprecationMessage: spindle-url is deprecated; use prodgator-url with the same value.
   audience:
     description: OIDC audience. Default - the origin of the URL in use.
     required: false
