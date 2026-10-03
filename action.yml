@@ -1,9 +1,9 @@
 name: Prodgator report
 description: Send this job's summary, test results, attestations and artifacts to Prodgator, authenticated with GitHub OIDC (no secrets).
-author: SCRT-HQ
+author: Prodgator
 branding:
   icon: activity
-  color: purple
+  color: green
 inputs:
   summary:
     description: Markdown to send. Default - the summaries earlier steps of this job wrote to $GITHUB_STEP_SUMMARY.
@@ -30,13 +30,16 @@ inputs:
   attestations:
     description: Attestations as inline JSON or a path to a JSON file (kinds test-results, coverage, sbom, scan, custom).
     required: false
+  ownership:
+    description: Path of a CODEOWNERS file (or a Prodgator ownership JSON file) to send for code owners rules, for example .github/CODEOWNERS. Send it from a workflow that runs on pushes to your base branches.
+    required: false
   prodgator-url:
-    description: Prodgator API URL.
+    description: Prodgator API URL. Default https://api.prodgator.io.
     required: false
-    default: https://api.prodgator.io
   spindle-url:
-    description: Deprecated alias for prodgator-url. Setting both to different values fails the step.
+    description: Old name of prodgator-url.
     required: false
+    deprecationMessage: spindle-url is deprecated; use prodgator-url with the same value.
   audience:
     description: OIDC audience. Default - the origin of the URL in use.
     required: false

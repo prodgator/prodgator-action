@@ -25,6 +25,38 @@ jobs:
 
 `permissions: id-token: write` lets the action mint a short-lived OIDC token; without it the step fails with a message telling you to add it. `if: always()` sends the report even when an earlier step in the job fails, so a broken build still shows its test results in Prodgator.
 
+## If your workflow has approvals
+
+Prodgator shows the summary and attestations on the run while a deployment waits for approval, and the AI release risk reads them, only if the report was sent before the approval. A job that uses an environment with required reviewers does not start until someone approves, so a report step inside it, or in a job that needs it, runs only after the approval. Send the report from the build or test job instead, or from a separate report job that needs the build and test jobs but not the deploy job:
+
+```yaml
+permissions:
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm test
+      - run: npm run build
+
+      - uses: prodgator/prodgator-action@v1   # runs before the approval below
+        if: always()
+        with:
+          junit: 'reports/**/*.xml'
+          artifacts: 'dist/**'
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production   # required reviewers: the job waits here
+    steps:
+      - run: ./deploy.sh
+```
+
+With several build and test jobs, add a `report` job with `needs: [build, test]` and `if: always()`, and have those jobs upload the files it reports as workflow artifacts. Do not make `report` depend on `deploy`. Without an environment that needs approval, a step at the end of the last job is the right place. The report cannot include results of jobs that run after the approval, such as the deployment itself.
+
 ## Inputs
 
 | Name | Default | Description |
@@ -37,10 +69,17 @@ jobs:
 | `junit` | (none) | Globs of JUnit XML files, summed into one `test-results` attestation. |
 | `artifacts` | (none) | Globs of files to upload (newline or comma separated). |
 | `attestations` | (none) | Attestations as inline JSON or a path to a JSON file. See Attestation kinds below. |
+| `ownership` | (none) | Path of a `CODEOWNERS` file or a Prodgator ownership JSON file, sent for code owners rules on pull requests. See Ownership reports below. |
 | `prodgator-url` | `https://api.prodgator.io` | Prodgator API URL. Point this at `https://api.prodgator.dev` or a self-hosted deployment. |
-| `spindle-url` | (none) | Deprecated alias for `prodgator-url`, kept for the v1 line. Setting both to different values fails the step with a clear error; setting only `spindle-url` still works but logs a deprecation notice. |
+| `spindle-url` | (none) | Old name of `prodgator-url`, kept as a deprecated alias for the v1 line. Used only when `prodgator-url` is empty, and logs a deprecation notice. |
 | `audience` | the origin of the URL in use | OIDC audience. Only set this if you know you need something other than the API origin. |
 | `fail-on-error` | `false` | Fail the step when the report cannot be sent, instead of warning and continuing. |
+
+### Renamed input
+
+`spindle-url` was the action's original input name and is now `prodgator-url`. Both still work: `prodgator-url` wins when both are set, and `spindle-url` alone still works but logs a deprecation notice in the step log. Move to `prodgator-url` when convenient; `spindle-url` stays supported through the v1 line.
+
+This action is one of three ways to send a Prodgator run report: the [GitLab CI/CD component](https://gitlab.com/prodgator/prodgator-component) for GitLab CI, and the [Bitbucket Pipe](https://bitbucket.org/prodgator/prodgator-pipe) for Bitbucket Pipelines, cover the other two CI systems with the same report.
 
 ## Outputs
 
@@ -95,12 +134,39 @@ Status (`pass`, `fail`, `warn`, `info`) is derived by Prodgator from the data fo
 
 A missing or empty file, or one outside the workspace, is skipped with a warning and the attestation is sent without the link.
 
-Prodgator reads findings from SARIF 2.1.0, CycloneDX JSON and SPDX JSON files. Run your scanner with SARIF output (for example `grype -o sarif` or `trivy --format sarif`) and use `"format": "sarif"`. `grype-json` and `trivy-json` are still accepted, but those files are only attached to the report: Prodgator reads no findings from them. See [Scanner Setup (SARIF)](https://docs.prodgator.io/guides/security-scanners) for examples with ASH, Grype, Trivy, Semgrep, Checkov and Syft.
+Prodgator reads findings from SARIF 2.1.0, CycloneDX JSON and SPDX JSON files. Run your scanner with SARIF output (for example `grype -o sarif` or `trivy --format sarif`) and use `"format": "sarif"`. `grype-json` and `trivy-json` are still accepted, but those files are only attached to the report: Prodgator reads no findings from them. See [Set up a scanner](https://docs.prodgator.io/security/uploads/scanners) for examples with ASH, Grype, Trivy, Semgrep, Checkov and Syft.
 
 **custom** (status is required, since Prodgator has no rule for it):
 
 ```json
 { "kind": "custom", "name": "change-ticket", "status": "warn", "data": { "title": "Change ticket", "details": { "id": "CHG-1042" } } }
+```
+
+## Ownership reports
+
+Code owners rules on pull requests need to know who owns each file. Send your `CODEOWNERS` file from a workflow that runs on pushes to your base branches:
+
+```yaml
+on:
+  push:
+    branches: [main]
+jobs:
+  ownership:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prodgator/prodgator-action@v1
+        with:
+          ownership: .github/CODEOWNERS
+```
+
+The action uploads the file with the report and adds an `ownership` attestation that points at it. Prodgator reads the file (at most 256 KB and 5,000 rules) and uses it for pull requests into that branch. Owners are `@user` or `@org/team`; email owners are skipped. A file ending in `.json` is read as Prodgator ownership JSON:
+
+```json
+{ "version": 1, "rules": [{ "pattern": "infra/**", "owners": ["@acme/platform"] }] }
 ```
 
 ## Matrix jobs
