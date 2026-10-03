@@ -30934,12 +30934,17 @@ async function postJson(url, body, audience, deps) {
         method: "POST",
         headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "user-agent": deps.userAgent ?? "prodgator-report/1" },
         body: JSON.stringify(body),
+        // A redirect would carry the token to another address: never follow one.
+        redirect: "manual",
         signal: AbortSignal.timeout(3e4)
       });
     } catch (e) {
       if (/ACTIONS_ID_TOKEN_REQUEST_URL|id-token/i.test(e.message)) throw e;
       last = new ReportError(0, "NETWORK", e.message, true);
       continue;
+    }
+    if (res.type === "opaqueredirect" || res.status >= 300 && res.status < 400) {
+      throw new ReportError(res.status, "REDIRECT_REFUSED", "Prodgator answered with a redirect; the token is never sent to a redirected address. Check prodgator-url.", false);
     }
     if (res.ok) return await res.clone().json();
     const payload = await res.clone().json().catch(() => ({}));
@@ -30956,8 +30961,8 @@ async function postJson(url, body, audience, deps) {
   }
   throw last;
 }
-var sendReport = (baseUrl, provider, req, audience, deps) => postJson(`${baseUrl}/api/ingest/${provider}/reports`, req, audience, deps);
-var completeReport = (baseUrl, provider, reportId, artifactIds, audience, deps) => postJson(`${baseUrl}/api/ingest/${provider}/reports/${encodeURIComponent(reportId)}/complete`, { artifactIds }, audience, deps);
+var sendReport = (baseUrl, provider, req, audience, deps, azure) => postJson(`${baseUrl}/api/ingest/${provider}/reports`, azure ? { ...req, azure } : req, audience, deps);
+var completeReport = (baseUrl, provider, reportId, artifactIds, audience, deps, azure) => postJson(`${baseUrl}/api/ingest/${provider}/reports/${encodeURIComponent(reportId)}/complete`, azure ? { artifactIds, azure } : { artifactIds }, audience, deps);
 
 // ../prodgator-report/src/core/upload.ts
 var import_fs5 = require("fs");
@@ -30967,7 +30972,8 @@ function putOnce(slot, file) {
   return new Promise((resolve4, reject) => {
     const url = new URL(slot.url);
     const mod = url.protocol === "http:" ? http2 : https2;
-    const req = mod.request(url, { method: "PUT", headers: slot.headers, timeout: 10 * 6e4 }, (res) => {
+    const headers = Object.fromEntries(Object.entries(slot.headers).filter(([k]) => !/^(proxy-)?authorization$|^cookie$/i.test(k)));
+    const req = mod.request(url, { method: "PUT", headers, timeout: 10 * 6e4 }, (res) => {
       let body = "";
       res.setEncoding("utf8");
       res.on("data", (c) => {
