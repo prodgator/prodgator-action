@@ -62,7 +62,7 @@ With several build and test jobs, add a `report` job with `needs: [build, test]`
 | Name | Default | Description |
 |---|---|---|
 | `summary` | (none) | Markdown to send. Default: the summaries earlier steps of this job wrote to `$GITHUB_STEP_SUMMARY`. |
-| `summary-file` | (none) | Path to a markdown file to send instead. |
+| `summary-file` | (none) | Path to a markdown file in the workspace to send instead (relative paths start at the workspace). |
 | `name` | `default` | Report name within the job. Give each step a different name to send several reports from one job. |
 | `job-name` | `$GITHUB_JOB` | Job identifier. |
 | `matrix` | (none) | In matrix jobs, pass `${{ toJSON(matrix) }}` so each leg keeps its own report. |
@@ -199,7 +199,7 @@ An upload that would cross a limit is skipped with a warning in the step log; th
 - The repository must belong to a GitHub organization or user connected to exactly one Prodgator organization through the Prodgator GitHub App. A repository under an unlinked owner logs a warning (`REPO_NOT_LINKED`) and the job still succeeds.
 - Reports from `pull_request_target` and `workflow_run` events, and from a `pull_request` whose head repository is a fork, are accepted but marked **untrusted**. Release policies count only trusted attestations by default.
 - Prodgator members download report artifacts only when signed in to the linked Prodgator organization.
-- The action uploads only files inside the workspace. A matched symlink whose target is outside the workspace is skipped, and nothing under a `.git` directory is uploaded (`actions/checkout` stores the job token in `.git/config`).
+- The action reads and uploads only files inside the workspace: the summary file, the attestations file, JUnit files, scanner files, the ownership file and artifacts. A file whose real path is outside the workspace (a symlink, or a file under a symlinked directory) is skipped with a warning, and nothing under a `.git` directory is read (`actions/checkout` stores the job token in `.git/config`). A skipped attestations file stops the report like a missing one. A step summary file that is a symlink is skipped too.
 
 ## How summaries are collected
 

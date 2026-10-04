@@ -9,7 +9,7 @@ inputs:
     description: Markdown to send. Default - the summaries earlier steps of this job wrote to $GITHUB_STEP_SUMMARY.
     required: false
   summary-file:
-    description: Path to a markdown file to send instead.
+    description: Path to a markdown file in the workspace to send instead.
     required: false
   name:
     description: Report name within the job (several steps can report separately).
