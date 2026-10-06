@@ -66,12 +66,14 @@ With several build and test jobs, add a `report` job with `needs: [build, test]`
 | `name` | `default` | Report name within the job. Give each step a different name to send several reports from one job. |
 | `job-name` | `$GITHUB_JOB` | Job identifier. |
 | `matrix` | (none) | In matrix jobs, pass `${{ toJSON(matrix) }}` so each leg keeps its own report. |
-| `junit` | (none) | Globs of JUnit XML files, summed into one `test-results` attestation. |
+| `junit` | (none) | Globs of JUnit XML files. The files are summed into one `test-results` attestation. |
+| `junit-name` | (none) | The name of the `test-results` attestation the JUnit files are summed into. Default: `junit`. |
 | `artifacts` | (none) | Globs of files to upload (newline or comma separated). |
 | `attestations` | (none) | Attestations as inline JSON or a path to a JSON file. See Attestation kinds below. |
 | `ownership` | (none) | Path of a `CODEOWNERS` file or a Prodgator ownership JSON file, sent for code owners rules on pull requests. See Ownership reports below. |
 | `prodgator-url` | `https://api.prodgator.io` | Prodgator API URL. Point this at `https://api.prodgator.dev` or a self-hosted deployment. |
 | `audience` | the origin of the URL in use | OIDC audience. Only set this if you know you need something other than the API origin. |
+| `blame` | `true` | Run `git blame` on the code findings of SARIF scan files and send the commit that introduced each one. Set to `false` to skip it. Needs the full history: check out with `fetch-depth: 0`. |
 | `fail-on-error` | `false` | Fail the step when the report cannot be sent, instead of warning and continuing. |
 
 This action is one of three ways to send a Prodgator run report: the [GitLab CI/CD component](https://gitlab.com/prodgator/prodgator-component) for GitLab CI, and the [Bitbucket Pipe](https://bitbucket.org/prodgator/prodgator-pipe) for Bitbucket Pipelines, cover the other two CI systems with the same report.
@@ -95,9 +97,11 @@ with:
     ]
 ```
 
+Every attestation may carry a `sourcePath`: a workspace-relative path (or a glob pattern as text) that says where it came from. An absolute path inside the workspace is made relative; one outside it, or a path with `..`, is dropped with a warning. `junit` sets it to the pattern when you give one, else to the file when only one was read, and a scan or SBOM entry with a `file` gets that file's path when you give none.
+
 Status (`pass`, `fail`, `warn`, `info`) is derived by Prodgator from the data for every kind except `custom`, which sets its own.
 
-**test-results** (also produced automatically from `junit`):
+**test-results** (also produced automatically from `junit`: every matched file is summed into one attestation, named by `junit-name` when set, else `junit`):
 
 ```json
 { "kind": "test-results", "name": "unit", "data": { "passed": 412, "failed": 0, "skipped": 3, "errors": 0 } }

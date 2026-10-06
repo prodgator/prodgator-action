@@ -22,7 +22,10 @@ inputs:
     description: In matrix jobs pass toJSON(matrix) so each leg keeps its own report.
     required: false
   junit:
-    description: Globs of JUnit XML files, summed into one test-results attestation.
+    description: Globs of JUnit XML files. Summed into one test-results attestation.
+    required: false
+  junit-name:
+    description: The name of the test-results attestation the JUnit files are summed into. Defaults to junit.
     required: false
   artifacts:
     description: Globs of files to upload (newline or comma separated).
@@ -43,6 +46,10 @@ inputs:
     description: Fail the step when the report cannot be sent.
     required: false
     default: 'false'
+  blame:
+    description: Run git blame on the code findings of SARIF scan files and send the commit that introduced each one. Set to false to skip it.
+    required: false
+    default: 'true'
 outputs:
   report-id:
     description: The Prodgator report id.
