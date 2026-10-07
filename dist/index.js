@@ -1968,26 +1968,26 @@ var require_request = __commonJS({
         }
       }
       if (Array.isArray(val)) {
-        const arr2 = [];
+        const arr3 = [];
         for (let i = 0; i < val.length; i++) {
           if (typeof val[i] === "string") {
             if (!isValidHeaderValue(val[i])) {
               throw new InvalidArgumentError(`invalid ${key} header`);
             }
-            arr2.push(val[i]);
+            arr3.push(val[i]);
           } else if (val[i] === null) {
-            arr2.push("");
+            arr3.push("");
           } else if (typeof val[i] === "object") {
             throw new InvalidArgumentError(`invalid ${key} header`);
           } else {
-            const str2 = `${val[i]}`;
-            if (!isValidHeaderValue(str2)) {
+            const str3 = `${val[i]}`;
+            if (!isValidHeaderValue(str3)) {
               throw new InvalidArgumentError(`invalid ${key} header`);
             }
-            arr2.push(str2);
+            arr3.push(str3);
           }
         }
-        val = arr2;
+        val = arr3;
       } else if (typeof val === "string") {
         if (!isValidHeaderValue(val)) {
           throw new InvalidArgumentError(`invalid ${key} header`);
@@ -3549,25 +3549,25 @@ var require_data_url = __commonJS({
     function isHTTPWhiteSpace(char) {
       return char === 13 || char === 10 || char === 9 || char === 32;
     }
-    function removeHTTPWhitespace(str2, leading = true, trailing = true) {
-      return removeChars(str2, leading, trailing, isHTTPWhiteSpace);
+    function removeHTTPWhitespace(str3, leading = true, trailing = true) {
+      return removeChars(str3, leading, trailing, isHTTPWhiteSpace);
     }
     function isASCIIWhitespace(char) {
       return char === 13 || char === 10 || char === 9 || char === 12 || char === 32;
     }
-    function removeASCIIWhitespace(str2, leading = true, trailing = true) {
-      return removeChars(str2, leading, trailing, isASCIIWhitespace);
+    function removeASCIIWhitespace(str3, leading = true, trailing = true) {
+      return removeChars(str3, leading, trailing, isASCIIWhitespace);
     }
-    function removeChars(str2, leading, trailing, predicate) {
+    function removeChars(str3, leading, trailing, predicate) {
       let lead = 0;
-      let trail = str2.length - 1;
+      let trail = str3.length - 1;
       if (leading) {
-        while (lead < str2.length && predicate(str2.charCodeAt(lead))) lead++;
+        while (lead < str3.length && predicate(str3.charCodeAt(lead))) lead++;
       }
       if (trailing) {
-        while (trail > 0 && predicate(str2.charCodeAt(trail))) trail--;
+        while (trail > 0 && predicate(str3.charCodeAt(trail))) trail--;
       }
-      return lead === 0 && trail === str2.length - 1 ? str2 : str2.slice(lead, trail + 1);
+      return lead === 0 && trail === str3.length - 1 ? str3 : str3.slice(lead, trail + 1);
     }
     function isomorphicDecode(input) {
       const length = input.length;
@@ -5486,7 +5486,7 @@ var require_body = __commonJS({
         const boundary = `----formdata-undici-0${`${random(1e11)}`.padStart(11, "0")}`;
         const prefix = `--${boundary}\r
 Content-Disposition: form-data`;
-        const escape = (str2) => str2.replace(/\n/g, "%0A").replace(/\r/g, "%0D").replace(/"/g, "%22");
+        const escape = (str3) => str3.replace(/\n/g, "%0A").replace(/\r/g, "%0D").replace(/"/g, "%22");
         const normalizeLinefeeds = (value) => value.replace(/\r?\n|\r/g, "\r\n");
         const blobParts = [];
         const rn = new Uint8Array([13, 10]);
@@ -16470,9 +16470,9 @@ var require_cookies = __commonJS({
       webidl.argumentLengthCheck(arguments, 2, "setCookie");
       webidl.brandCheck(headers, Headers2, { strict: false });
       cookie = webidl.converters.Cookie(cookie);
-      const str2 = stringify(cookie);
-      if (str2) {
-        headers.append("Set-Cookie", str2);
+      const str3 = stringify(cookie);
+      if (str3) {
+        headers.append("Set-Cookie", str3);
       }
     }
     webidl.converters.DeleteCookieAttributes = webidl.dictionaryConverter([
@@ -21203,8 +21203,8 @@ var require_toolrunner = __commonJS({
         }
         return this.args;
       }
-      _endsWith(str2, end) {
-        return str2.endsWith(end);
+      _endsWith(str3, end) {
+        return str3.endsWith(end);
       }
       _isCmdFile() {
         const upperToolPath = this.toolPath.toUpperCase();
@@ -22386,38 +22386,38 @@ var require_balanced_match = __commonJS({
   "node_modules/balanced-match/index.js"(exports2, module2) {
     "use strict";
     module2.exports = balanced;
-    function balanced(a, b, str2) {
-      if (a instanceof RegExp) a = maybeMatch(a, str2);
-      if (b instanceof RegExp) b = maybeMatch(b, str2);
-      var r = range(a, b, str2);
+    function balanced(a, b, str3) {
+      if (a instanceof RegExp) a = maybeMatch(a, str3);
+      if (b instanceof RegExp) b = maybeMatch(b, str3);
+      var r = range(a, b, str3);
       return r && {
         start: r[0],
         end: r[1],
-        pre: str2.slice(0, r[0]),
-        body: str2.slice(r[0] + a.length, r[1]),
-        post: str2.slice(r[1] + b.length)
+        pre: str3.slice(0, r[0]),
+        body: str3.slice(r[0] + a.length, r[1]),
+        post: str3.slice(r[1] + b.length)
       };
     }
-    function maybeMatch(reg, str2) {
-      var m = str2.match(reg);
+    function maybeMatch(reg, str3) {
+      var m = str3.match(reg);
       return m ? m[0] : null;
     }
     balanced.range = range;
-    function range(a, b, str2) {
+    function range(a, b, str3) {
       var begs, beg, left, right, result;
-      var ai = str2.indexOf(a);
-      var bi = str2.indexOf(b, ai + 1);
+      var ai = str3.indexOf(a);
+      var bi = str3.indexOf(b, ai + 1);
       var i = ai;
       if (ai >= 0 && bi > 0) {
         if (a === b) {
           return [ai, bi];
         }
         begs = [];
-        left = str2.length;
+        left = str3.length;
         while (i >= 0 && !result) {
           if (i == ai) {
             begs.push(i);
-            ai = str2.indexOf(a, i + 1);
+            ai = str3.indexOf(a, i + 1);
           } else if (begs.length == 1) {
             result = [begs.pop(), bi];
           } else {
@@ -22426,7 +22426,7 @@ var require_balanced_match = __commonJS({
               left = beg;
               right = bi;
             }
-            bi = str2.indexOf(b, i + 1);
+            bi = str3.indexOf(b, i + 1);
           }
           i = ai < bi && ai >= 0 ? ai : bi;
         }
@@ -22454,27 +22454,27 @@ var require_brace_expansion = __commonJS({
     var EXPANSION_MAX_LENGTH = 4e6;
     var EXPANSION_MAX_DEPTH = 1e3;
     var EXPANSION_MAX_REWRITES = 1e3;
-    function numeric(str2) {
-      return parseInt(str2, 10) == str2 ? parseInt(str2, 10) : str2.charCodeAt(0);
+    function numeric(str3) {
+      return parseInt(str3, 10) == str3 ? parseInt(str3, 10) : str3.charCodeAt(0);
     }
-    function escapeBraces(str2) {
-      return str2.split("\\\\").join(escSlash).split("\\{").join(escOpen).split("\\}").join(escClose).split("\\,").join(escComma).split("\\.").join(escPeriod);
+    function escapeBraces(str3) {
+      return str3.split("\\\\").join(escSlash).split("\\{").join(escOpen).split("\\}").join(escClose).split("\\,").join(escComma).split("\\.").join(escPeriod);
     }
-    function unescapeBraces(str2) {
-      return str2.split(escSlash).join("\\").split(escOpen).join("{").split(escClose).join("}").split(escComma).join(",").split(escPeriod).join(".");
+    function unescapeBraces(str3) {
+      return str3.split(escSlash).join("\\").split(escOpen).join("{").split(escClose).join("}").split(escComma).join(",").split(escPeriod).join(".");
     }
     function pushAll(target, items) {
       for (var i = 0; i < items.length; i++) {
         target.push(items[i]);
       }
     }
-    function parseCommaParts(str2) {
+    function parseCommaParts(str3) {
       var parts = [];
       var carry = "";
       for (; ; ) {
-        var m = balanced("{", "}", str2);
+        var m = balanced("{", "}", str3);
         if (!m) {
-          var tail = str2.split(",");
+          var tail = str3.split(",");
           tail[0] = carry + tail[0];
           pushAll(parts, tail);
           return parts;
@@ -22491,24 +22491,24 @@ var require_brace_expansion = __commonJS({
         }
         carry = p.pop();
         pushAll(parts, p);
-        str2 = post;
+        str3 = post;
       }
     }
-    function expandTop(str2, options) {
-      if (!str2)
+    function expandTop(str3, options) {
+      if (!str3)
         return [];
       options = options || {};
       var max = options.max == null ? EXPANSION_MAX : options.max;
       var maxLength = options.maxLength == null ? EXPANSION_MAX_LENGTH : options.maxLength;
       var maxDepth = options.maxDepth == null ? EXPANSION_MAX_DEPTH : options.maxDepth;
       var maxRewrites = options.maxRewrites == null ? EXPANSION_MAX_REWRITES : options.maxRewrites;
-      if (str2.substr(0, 2) === "{}") {
-        str2 = "\\{\\}" + str2.substr(2);
+      if (str3.substr(0, 2) === "{}") {
+        str3 = "\\{\\}" + str3.substr(2);
       }
-      return expand(escapeBraces(str2), max, maxLength, maxDepth, 0, maxRewrites, true).map(unescapeBraces);
+      return expand(escapeBraces(str3), max, maxLength, maxDepth, 0, maxRewrites, true).map(unescapeBraces);
     }
-    function embrace(str2) {
-      return "{" + str2 + "}";
+    function embrace(str3) {
+      return "{" + str3 + "}";
     }
     function isPadded(el) {
       return /^-?0\d/.test(el);
@@ -22580,9 +22580,9 @@ var require_brace_expansion = __commonJS({
       }
       return N;
     }
-    function expand(str2, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+    function expand(str3, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
       if (depth > maxDepth) {
-        return [str2];
+        return [str3];
       }
       var acc = [""];
       var accBase = [0];
@@ -22591,13 +22591,13 @@ var require_brace_expansion = __commonJS({
       var firstGroup = true;
       var nextBase;
       for (; ; ) {
-        var m = balanced("{", "}", str2);
+        var m = balanced("{", "}", str3);
         if (!m) {
-          return combine(acc, accBase, str2, [""], max, maxLength, dropEmpties, []);
+          return combine(acc, accBase, str3, [""], max, maxLength, dropEmpties, []);
         }
         var pre = m.pre;
         if (/\$$/.test(pre)) {
-          return combine(acc, accBase, str2, [""], max, maxLength, dropEmpties, []);
+          return combine(acc, accBase, str3, [""], max, maxLength, dropEmpties, []);
         }
         var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
         var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
@@ -22606,7 +22606,7 @@ var require_brace_expansion = __commonJS({
         if (!isSequence && !isOptions) {
           if (rewrites < maxRewrites && m.post.match(/,(?!,).*\}/)) {
             rewrites++;
-            str2 = m.pre + "{" + m.body + escClose + m.post;
+            str3 = m.pre + "{" + m.body + escClose + m.post;
             isTop = true;
             firstGroup = true;
             dropEmpties = false;
@@ -22652,7 +22652,7 @@ var require_brace_expansion = __commonJS({
               );
               accBase = nextBase;
               if (!m.post.length) break;
-              str2 = m.post;
+              str3 = m.post;
               continue;
             }
           }
@@ -22690,7 +22690,7 @@ var require_brace_expansion = __commonJS({
         );
         accBase = nextBase;
         if (!m.post.length) break;
-        str2 = m.post;
+        str3 = m.post;
       }
       return acc;
     }
@@ -25842,8 +25842,8 @@ var ToolRunner = class extends events.EventEmitter {
     }
     return this.args;
   }
-  _endsWith(str2, end) {
-    return str2.endsWith(end);
+  _endsWith(str3, end) {
+    return str3.endsWith(end);
   }
   _isCmdFile() {
     const upperToolPath = this.toolPath.toUpperCase();
@@ -27229,29 +27229,29 @@ var EntityDecoder = class {
    * @param {string} str
    * @returns {string}
    */
-  decode(str2) {
-    if (typeof str2 !== "string" || str2.length === 0) return str2;
-    if (str2.indexOf("&") === -1) return str2;
-    const original = str2;
+  decode(str3) {
+    if (typeof str3 !== "string" || str3.length === 0) return str3;
+    if (str3.indexOf("&") === -1) return str3;
+    const original = str3;
     const chunks = [];
-    const len = str2.length;
+    const len = str3.length;
     let last = 0;
     let i = 0;
     const limitExpansions = this._maxTotalExpansions > 0;
     const limitLength = this._maxExpandedLength > 0;
     const checkLimits = limitExpansions || limitLength;
     while (i < len) {
-      if (str2.charCodeAt(i) !== 38) {
+      if (str3.charCodeAt(i) !== 38) {
         i++;
         continue;
       }
       let j = i + 1;
-      while (j < len && str2.charCodeAt(j) !== 59 && j - i <= 32) j++;
-      if (j >= len || str2.charCodeAt(j) !== 59) {
+      while (j < len && str3.charCodeAt(j) !== 59 && j - i <= 32) j++;
+      if (j >= len || str3.charCodeAt(j) !== 59) {
         i++;
         continue;
       }
-      const token = str2.slice(i + 1, j);
+      const token = str3.slice(i + 1, j);
       if (token.length === 0) {
         i++;
         continue;
@@ -27283,7 +27283,7 @@ var EntityDecoder = class {
         i++;
         continue;
       }
-      if (i > last) chunks.push(str2.slice(last, i));
+      if (i > last) chunks.push(str3.slice(last, i));
       chunks.push(replacement);
       last = j + 1;
       i = last;
@@ -27309,8 +27309,8 @@ var EntityDecoder = class {
         }
       }
     }
-    if (last < len) chunks.push(str2.slice(last));
-    const result = chunks.length === 0 ? str2 : chunks.join("");
+    if (last < len) chunks.push(str3.slice(last));
+    const result = chunks.length === 0 ? str3 : chunks.join("");
     return this._postCheck(result, original);
   }
   // -------------------------------------------------------------------------
@@ -27629,7 +27629,7 @@ var getRegexes = (xmlVersion = "1.0", asciiOnly = false) => {
   if (asciiOnly) return regexesAscii;
   return xmlVersion === "1.1" ? regexes11 : regexes10;
 };
-var qName = (str2, { xmlVersion = "1.0", asciiOnly = false } = {}) => getRegexes(xmlVersion, asciiOnly).qName.test(str2);
+var qName = (str3, { xmlVersion = "1.0", asciiOnly = false } = {}) => getRegexes(xmlVersion, asciiOnly).qName.test(str3);
 
 // ../prodgator-report/node_modules/fast-xml-parser/src/xmlparser/DocTypeReader.js
 var DocTypeReader = class {
@@ -28077,13 +28077,13 @@ var CHAR_0 = 48;
 var CHAR_9 = 57;
 var CHAR_MINUS = 45;
 var MINUS_SET = /* @__PURE__ */ new Set([8722, 65293, 65123]);
-function anynum(str2) {
-  if (typeof str2 !== "string") return str2;
-  const len = str2.length;
-  if (len === 0) return str2;
+function anynum(str3) {
+  if (typeof str3 !== "string") return str3;
+  const len = str3.length;
+  if (len === 0) return str3;
   let firstHit = -1;
   for (let i = 0; i < len; i++) {
-    const cc = str2.charCodeAt(i);
+    const cc = str3.charCodeAt(i);
     if (cc >= CHAR_0 && cc <= CHAR_9 || cc === CHAR_MINUS) continue;
     if (cc < TABLE_OFFSET) {
       if (MINUS_SET.has(cc)) {
@@ -28094,7 +28094,7 @@ function anynum(str2) {
     }
     if (cc >= 55296 && cc <= 56319) {
       if (i + 1 < len) {
-        const low = str2.charCodeAt(i + 1);
+        const low = str3.charCodeAt(i + 1);
         if (low >= 56320 && low <= 57343) {
           const cp = 65536 + (cc - 55296 << 10) + (low - 56320);
           if (HIGH_MAP.has(cp)) {
@@ -28110,22 +28110,22 @@ function anynum(str2) {
       break;
     }
   }
-  if (firstHit === -1) return str2;
+  if (firstHit === -1) return str3;
   const chars = [];
-  if (firstHit > 0) chars.push(str2.slice(0, firstHit));
+  if (firstHit > 0) chars.push(str3.slice(0, firstHit));
   for (let i = firstHit; i < len; i++) {
-    const cc = str2.charCodeAt(i);
+    const cc = str3.charCodeAt(i);
     if (cc >= CHAR_0 && cc <= CHAR_9 || cc === CHAR_MINUS) {
-      chars.push(str2[i]);
+      chars.push(str3[i]);
       continue;
     }
     if (cc < TABLE_OFFSET) {
-      chars.push(MINUS_SET.has(cc) ? "-" : str2[i]);
+      chars.push(MINUS_SET.has(cc) ? "-" : str3[i]);
       continue;
     }
     if (cc >= 55296 && cc <= 56319) {
       if (i + 1 < len) {
-        const low = str2.charCodeAt(i + 1);
+        const low = str3.charCodeAt(i + 1);
         if (low >= 56320 && low <= 57343) {
           const cp = 65536 + (cc - 55296 << 10) + (low - 56320);
           const d2 = HIGH_MAP.get(cp);
@@ -28136,7 +28136,7 @@ function anynum(str2) {
           }
         }
       }
-      chars.push(str2[i]);
+      chars.push(str3[i]);
       continue;
     }
     if (MINUS_SET.has(cc)) {
@@ -28144,7 +28144,7 @@ function anynum(str2) {
       continue;
     }
     const d = TABLE[cc - TABLE_OFFSET];
-    chars.push(d !== NOT_DIGIT ? String.fromCharCode(d + 48) : str2[i]);
+    chars.push(d !== NOT_DIGIT ? String.fromCharCode(d + 48) : str3[i]);
   }
   return chars.join("");
 }
@@ -28167,12 +28167,12 @@ var consider = {
   // "null", "infinity" (Infinity type), "string" ("Infinity" (the string literal))
   unicode: false
 };
-function toNumber(str2, options = {}) {
+function toNumber(str3, options = {}) {
   options = Object.assign({}, consider, options);
-  if (!str2 || typeof str2 !== "string") return str2;
-  let trimmedStr = str2.trim();
-  if (trimmedStr.length === 0) return str2;
-  else if (options.skipLike !== void 0 && options.skipLike.test(trimmedStr)) return str2;
+  if (!str3 || typeof str3 !== "string") return str3;
+  let trimmedStr = str3.trim();
+  if (trimmedStr.length === 0) return str3;
+  else if (options.skipLike !== void 0 && options.skipLike.test(trimmedStr)) return str3;
   else if (trimmedStr === "0") return 0;
   if (options.unicode) {
     trimmedStr = anynum_default(trimmedStr);
@@ -28185,9 +28185,9 @@ function toNumber(str2, options = {}) {
   } else if (options.octal && octRegex.test(trimmedStr)) {
     return parse_int(trimmedStr, 8);
   } else if (!isFinite(trimmedStr)) {
-    return handleInfinity(str2, Number(trimmedStr), options);
+    return handleInfinity(str3, Number(trimmedStr), options);
   } else if (trimmedStr.includes("e") || trimmedStr.includes("E")) {
-    return resolveEnotation(str2, trimmedStr, options);
+    return resolveEnotation(str3, trimmedStr, options);
   } else {
     const match = numRegex.exec(trimmedStr);
     if (match) {
@@ -28196,38 +28196,38 @@ function toNumber(str2, options = {}) {
       let numTrimmedByZeros = trimZeros(match[3]);
       const decimalAdjacentToLeadingZeros = sign ? (
         // 0., -00., 000.
-        str2[leadingZeros.length + 1] === "."
-      ) : str2[leadingZeros.length] === ".";
+        str3[leadingZeros.length + 1] === "."
+      ) : str3[leadingZeros.length] === ".";
       if (!options.leadingZeros && (leadingZeros.length > 1 || leadingZeros.length === 1 && !decimalAdjacentToLeadingZeros)) {
-        return str2;
+        return str3;
       } else {
         const num = Number(trimmedStr);
         const parsedStr = String(num);
         if (num === 0) return num;
         if (parsedStr.search(/[eE]/) !== -1) {
           if (options.eNotation) return num;
-          else return str2;
+          else return str3;
         } else if (trimmedStr.indexOf(".") !== -1) {
           if (parsedStr === "0") return num;
           else if (parsedStr === numTrimmedByZeros) return num;
           else if (parsedStr === `${sign}${numTrimmedByZeros}`) return num;
-          else return str2;
+          else return str3;
         }
         let n = leadingZeros ? numTrimmedByZeros : trimmedStr;
         if (leadingZeros) {
-          return n === parsedStr || sign + n === parsedStr ? num : str2;
+          return n === parsedStr || sign + n === parsedStr ? num : str3;
         } else {
-          return n === parsedStr || n === sign + parsedStr ? num : str2;
+          return n === parsedStr || n === sign + parsedStr ? num : str3;
         }
       }
     } else {
-      return str2;
+      return str3;
     }
   }
 }
 var eNotationRegx = /^([-+])?(0*)(\d*(\.\d*)?[eE][-\+]?\d+)$/;
-function resolveEnotation(str2, trimmedStr, options) {
-  if (!options.eNotation) return str2;
+function resolveEnotation(str3, trimmedStr, options) {
+  if (!options.eNotation) return str3;
   const notation = trimmedStr.match(eNotationRegx);
   if (notation) {
     let sign = notation[1] || "";
@@ -28235,21 +28235,21 @@ function resolveEnotation(str2, trimmedStr, options) {
     const leadingZeros = notation[2];
     const eAdjacentToLeadingZeros = sign ? (
       // 0E.
-      str2[leadingZeros.length + 1] === eChar
-    ) : str2[leadingZeros.length] === eChar;
-    if (leadingZeros.length > 1 && eAdjacentToLeadingZeros) return str2;
+      str3[leadingZeros.length + 1] === eChar
+    ) : str3[leadingZeros.length] === eChar;
+    if (leadingZeros.length > 1 && eAdjacentToLeadingZeros) return str3;
     else if (leadingZeros.length === 1 && (notation[3].startsWith(`.${eChar}`) || notation[3][0] === eChar)) {
       return Number(trimmedStr);
     } else if (leadingZeros.length > 0) {
       if (options.leadingZeros && !eAdjacentToLeadingZeros) {
         trimmedStr = (notation[1] || "") + notation[3];
         return Number(trimmedStr);
-      } else return str2;
+      } else return str3;
     } else {
       return Number(trimmedStr);
     }
   } else {
-    return str2;
+    return str3;
   }
 }
 function trimZeros(numStr) {
@@ -28265,14 +28265,14 @@ function trimZeros(numStr) {
   return numStr;
 }
 function parse_int(numStr, base) {
-  const str2 = numStr.trim();
-  if (base === 2 || base === 8) numStr = str2.substring(2);
+  const str3 = numStr.trim();
+  if (base === 2 || base === 8) numStr = str3.substring(2);
   if (parseInt) return parseInt(numStr, base);
   else if (Number.parseInt) return Number.parseInt(numStr, base);
   else if (window && window.parseInt) return window.parseInt(numStr, base);
   else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported");
 }
-function handleInfinity(str2, num, options) {
+function handleInfinity(str3, num, options) {
   const isPositive = num === Infinity;
   switch (options.infinity.toLowerCase()) {
     case "null":
@@ -28284,7 +28284,7 @@ function handleInfinity(str2, num, options) {
       return isPositive ? "Infinity" : "-Infinity";
     case "original":
     default:
-      return str2;
+      return str3;
   }
 }
 
@@ -30366,12 +30366,12 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
     }
   }
 }
-function findClosingIndex(xmlData, str2, i, errMsg) {
-  const closingIndex = xmlData.indexOf(str2, i);
+function findClosingIndex(xmlData, str3, i, errMsg) {
+  const closingIndex = xmlData.indexOf(str3, i);
   if (closingIndex === -1) {
     throw new Error(errMsg);
   } else {
-    return closingIndex + str2.length - 1;
+    return closingIndex + str3.length - 1;
   }
 }
 function findClosingChar(xmlData, char, i, errMsg) {
@@ -30502,11 +30502,11 @@ function stripAttributePrefix(attrs, prefix) {
 function prettify(node, options, matcher, readonlyMatcher) {
   return compress(node, options, matcher, readonlyMatcher);
 }
-function compress(arr2, options, matcher, readonlyMatcher) {
+function compress(arr3, options, matcher, readonlyMatcher) {
   let text;
   const compressedObj = {};
-  for (let i = 0; i < arr2.length; i++) {
-    const tagObj = arr2[i];
+  for (let i = 0; i < arr3.length; i++) {
+    const tagObj = arr3[i];
     const property = propName(tagObj);
     if (property !== void 0 && property !== options.textNodeName) {
       const rawAttrs = stripAttributePrefix(
@@ -30855,7 +30855,7 @@ async function junitAttestations(patterns, opts) {
 }
 
 // ../prodgator-report/src/core/attestations.ts
-var import_crypto3 = require("crypto");
+var import_crypto4 = require("crypto");
 var import_fs4 = require("fs");
 var import_os3 = require("os");
 var import_path4 = require("path");
@@ -31493,6 +31493,167 @@ async function provenanceData(data, workspace) {
   return bundle ? { ...out, bundle } : out;
 }
 
+// ../prodgator-report/src/core/sarif-counts.ts
+var import_crypto3 = require("crypto");
+var isObj2 = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+var arr2 = (v) => Array.isArray(v) ? v : [];
+var posInt = (v) => Number.isInteger(v) && v > 0 ? v : null;
+var str2 = (v) => typeof v === "string" && v.trim() ? v.trim() : null;
+var MAX_RUNS2 = 20;
+var SKIP_KINDS2 = /* @__PURE__ */ new Set(["pass", "notApplicable", "informational"]);
+var RULE_ID_MAX = 200;
+var NATIVE_ID_MAX = 512;
+var FINGERPRINTS_MAX = 10;
+var FINGERPRINT_VALUE_MAX = 200;
+var RANK = { critical: 0, high: 1, medium: 2, low: 3 };
+var SEVERITY_WORDS = {
+  critical: "critical",
+  high: "high",
+  error: "high",
+  medium: "medium",
+  moderate: "medium",
+  warning: "medium",
+  low: "low",
+  negligible: "low",
+  info: "low",
+  informational: "low",
+  none: "low",
+  note: "low",
+  minor: "low"
+};
+var SECRET_TOOLS2 = [/gitleaks/i, /trufflehog/i, /detect-secrets/i, /ggshield|gitguardian/i, /secret[- ]scanning/i, /secretlint/i, /noseyparker|nosey parker/i];
+var sha256Hex = (...parts) => (0, import_crypto3.createHash)("sha256").update(parts.map((p) => p === null || p === void 0 ? "" : String(p)).join("")).digest("hex");
+function clampText(v, max) {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  if (!t) return null;
+  return t.length > max ? `${t.slice(0, max - 1)}\u2026` : t;
+}
+function severityFromText(v) {
+  if (typeof v !== "string") return null;
+  const key = v.trim().toLowerCase();
+  return Object.hasOwn(SEVERITY_WORDS, key) ? SEVERITY_WORDS[key] : null;
+}
+function scoreOf(v) {
+  const raw = typeof v === "string" || typeof v === "number" ? parseFloat(String(v)) : NaN;
+  return Number.isFinite(raw) && raw > 0 && raw <= 10 ? Math.round(raw * 10) / 10 : null;
+}
+function severityFromScore(score) {
+  if (score === null || score <= 0) return null;
+  return score >= 9 ? "critical" : score >= 7 ? "high" : score >= 4 ? "medium" : "low";
+}
+function normalizePath(v, repository) {
+  if (typeof v !== "string" || !v.trim()) return null;
+  let p = v.trim();
+  try {
+    p = decodeURIComponent(p);
+  } catch {
+  }
+  p = p.replace(/\\/g, "/").replace(/^file:\/\//i, "");
+  const repoName = repository?.split("/")[1];
+  if (p.startsWith("/") && repoName) {
+    const marker = `/${repoName}/`;
+    const at = p.lastIndexOf(marker);
+    if (at >= 0) p = p.slice(at + marker.length);
+  }
+  p = p.replace(/^\/github\/workspace\//, "").replace(/^\/home\/runner\/work\/[^/]+\/[^/]+\//, "");
+  p = p.replace(/^\.\//, "").replace(/^\/+/, "").replace(/\/{2,}/g, "/");
+  if (!p || p.split("/").some((s) => s === "..")) return null;
+  return p.slice(0, 1024);
+}
+function firstFingerprint(result) {
+  const out = {};
+  for (const source of [result.partialFingerprints, result.fingerprints]) {
+    if (!isObj2(source)) continue;
+    for (const key of Object.keys(source).sort()) {
+      const value = source[key];
+      if (typeof value !== "string" || !(/(hash|fingerprint)/i.test(key) || /\/v\d+$/.test(key))) continue;
+      if (Object.keys(out).length >= FINGERPRINTS_MAX) break;
+      if (!(key in out)) out[key] = value.slice(0, FINGERPRINT_VALUE_MAX);
+    }
+  }
+  return Object.hasOwn(out, "primaryLocationLineHash") ? out.primaryLocationLineHash : Object.values(out)[0] ?? null;
+}
+var idMatches = (ruleId, descriptorId) => typeof descriptorId === "string" && (ruleId === descriptorId || ruleId.startsWith(`${descriptorId}/`));
+function ruleFor2(result, run2, driverRules, byId) {
+  const ref = isObj2(result.rule) ? result.rule : {};
+  const id = typeof result.ruleId === "string" ? result.ruleId : typeof ref.id === "string" ? ref.id : null;
+  const idx = Number.isInteger(result.ruleIndex) ? result.ruleIndex : Number.isInteger(ref.index) ? ref.index : null;
+  let rules = driverRules;
+  if (isObj2(ref.toolComponent)) {
+    const tc = ref.toolComponent;
+    const extensions = arr2(run2.tool?.extensions);
+    const component = Number.isInteger(tc.index) ? extensions[tc.index] : typeof tc.name === "string" ? tc.name === run2.tool?.driver?.name ? run2.tool.driver : extensions.find((e) => isObj2(e) && e.name === tc.name) : null;
+    rules = isObj2(component) ? arr2(component.rules) : [];
+  }
+  const indexed = idx !== null && idx >= 0 && idx < rules.length && isObj2(rules[idx]) ? rules[idx] : null;
+  if (indexed && (!id || idMatches(id, indexed.id))) return indexed;
+  if (!id) return {};
+  for (let key = id; ; key = key.slice(0, key.lastIndexOf("/"))) {
+    const hit = byId.get(key);
+    if (hit) return hit;
+    if (!key.includes("/")) return {};
+  }
+}
+function isSecret(result, rule, run2) {
+  const driver = isObj2(run2.tool?.driver) ? run2.tool.driver : {};
+  const props = isObj2(result.properties) ? result.properties : {};
+  const toolName = str2(props.scanner_name) ?? str2(props.scanner_details?.tool_name) ?? str2(run2.tool?.driver?.name);
+  const nested = toolName !== str2(driver.name);
+  const names = [toolName, nested ? null : str2(driver.fullName), nested ? null : str2(driver.informationUri)];
+  if (names.some((n) => !!n && SECRET_TOOLS2.some((re) => re.test(n)))) return true;
+  const tags = [...arr2(rule.properties?.tags), ...arr2(result.properties?.tags)].filter((t) => typeof t === "string").map((t) => t.toLowerCase());
+  const toolType = tags.map((t) => /^tool_type::(\w+)$/.exec(t)?.[1]).find(Boolean) ?? null;
+  return toolType === "secrets" || tags.includes("secret") || tags.includes("secrets");
+}
+function sarifCounts(json, repository = null) {
+  const counts = { critical: 0, high: 0, medium: 0, low: 0, suppressed: 0 };
+  let doc;
+  try {
+    doc = JSON.parse(json);
+  } catch {
+    return counts;
+  }
+  if (!isObj2(doc) || !Array.isArray(doc.runs)) return counts;
+  const seen = [];
+  for (const run2 of doc.runs.filter(isObj2).slice(0, MAX_RUNS2)) {
+    const driver = isObj2(run2.tool?.driver) ? run2.tool.driver : {};
+    const driverRules = arr2(driver.rules);
+    const byId = /* @__PURE__ */ new Map();
+    for (const r of [...driverRules, ...arr2(run2.tool?.extensions).flatMap((e) => arr2(e?.rules))]) {
+      if (isObj2(r) && typeof r.id === "string" && !byId.has(r.id)) byId.set(r.id, r);
+    }
+    const artifacts = arr2(run2.artifacts);
+    for (const result of arr2(run2.results)) {
+      if (!isObj2(result) || SKIP_KINDS2.has(result.kind)) continue;
+      const rule = ruleFor2(result, run2, driverRules, byId);
+      const ruleId = clampText(result.ruleId ?? rule.id, RULE_ID_MAX);
+      const score = scoreOf(result.properties?.["security-severity"]) ?? scoreOf(rule.properties?.["security-severity"]);
+      const severity = severityFromScore(score) ?? (isSecret(result, rule, run2) ? "high" : severityFromText(result.level ?? rule.defaultConfiguration?.level ?? "warning")) ?? "medium";
+      let fp = firstFingerprint(result);
+      if (fp === null) {
+        const physical = arr2(result.locations).map((l) => l?.physicalLocation).find(isObj2);
+        const location = isObj2(physical?.artifactLocation) ? physical.artifactLocation : {};
+        const uri = typeof location.uri === "string" ? location.uri : Number.isInteger(location.index) ? artifacts[location.index]?.location?.uri : null;
+        const messageText = typeof result.message?.text === "string" ? result.message.text : null;
+        fp = sha256Hex(ruleId, normalizePath(uri, repository), posInt(physical?.region?.startLine), messageText).slice(0, 32);
+      }
+      const suppressions = arr2(result.suppressions).filter(isObj2);
+      const suppressed = suppressions.length > 0 && suppressions.every((s) => s.status === void 0 || s.status === "accepted");
+      const state = suppressed ? "dismissed" : result.baselineState === "absent" ? "fixed" : "open";
+      seen.push({ id: `${ruleId ?? "no-rule"}#${fp}`.slice(0, NATIVE_ID_MAX), severity, state });
+    }
+  }
+  const ordered = seen.map((s, i) => ({ s, i })).sort((a, b) => RANK[a.s.severity] - RANK[b.s.severity] || (a.s.id < b.s.id ? -1 : a.s.id > b.s.id ? 1 : 0) || a.i - b.i);
+  const byFinding = /* @__PURE__ */ new Map();
+  for (const { s } of ordered) byFinding.set(s.id, s);
+  for (const f of byFinding.values()) {
+    if (f.state === "open") counts[f.severity]++;
+    else if (f.state === "dismissed") counts.suppressed++;
+  }
+  return counts;
+}
+
 // ../prodgator-report/src/core/attestations.ts
 var KINDS = ["test-results", "coverage", "sbom", "scan", "custom", "provenance"];
 async function parseAttestationsInput(value, workspace) {
@@ -31525,35 +31686,6 @@ function contentTypeForScanFile(format, path6) {
   if (format === "cyclonedx") return "application/vnd.cyclonedx+json";
   if (format === "spdx") return "application/spdx+json";
   return (0, import_path4.extname)(path6).toLowerCase() === ".json" ? "application/json" : "application/octet-stream";
-}
-function sarifCounts(json) {
-  const counts = { critical: 0, high: 0, medium: 0, low: 0 };
-  let doc;
-  try {
-    doc = JSON.parse(json);
-  } catch {
-    return counts;
-  }
-  const runs = Array.isArray(doc?.runs) ? doc.runs : [];
-  for (const run2 of runs) {
-    const results = Array.isArray(run2?.results) ? run2.results : [];
-    for (const r of results) {
-      const raw = r?.properties?.["security-severity"];
-      const score = typeof raw === "string" ? Number(raw) : typeof raw === "number" ? raw : NaN;
-      if (Number.isFinite(score)) {
-        if (score >= 9) counts.critical++;
-        else if (score >= 7) counts.high++;
-        else if (score >= 4) counts.medium++;
-        else counts.low++;
-        continue;
-      }
-      const level = typeof r?.level === "string" ? r.level : "warning";
-      if (level === "error") counts.high++;
-      else if (level === "note") counts.low++;
-      else counts.medium++;
-    }
-  }
-  return counts;
 }
 var BLAME_INPUT_WARNING = "data.blame is set by the report client itself; the value given was ignored";
 var isReservedSidecarPath = (path6) => path6.toLowerCase().endsWith(BLAME_SIDECAR_SUFFIX);
@@ -31590,7 +31722,7 @@ var BlameSidecars = class {
         workspace: this.dir,
         source: name,
         size: Buffer.byteLength(text),
-        sha256: (0, import_crypto3.createHash)("sha256").update(text).digest("hex"),
+        sha256: (0, import_crypto4.createHash)("sha256").update(text).digest("hex"),
         contentType: "application/json"
       };
     } catch {
@@ -31671,7 +31803,7 @@ async function resolveFiles(attestations, workspace, blame) {
       }
       if ((wantCounts || wantBlame) && opened.size <= MAX_SARIF_BYTES) {
         const bytes = await opened.handle.readFile();
-        sha256 = (0, import_crypto3.createHash)("sha256").update(bytes).digest("hex");
+        sha256 = (0, import_crypto4.createHash)("sha256").update(bytes).digest("hex");
         if (wantCounts) counts = sarifCounts(bytes.toString("utf8"));
         if (wantBlame) sarifBytes = bytes;
       } else {
@@ -31789,8 +31921,34 @@ var ReportError = class extends Error {
   }
 };
 var RETRY_STATUS = /* @__PURE__ */ new Set([429, 500, 502, 503, 504]);
+var MAX_RETRY_AFTER_MS = 6e4;
+function waitText(ms) {
+  const s = Math.ceil(ms / 1e3);
+  if (s >= 3600) {
+    const h = Math.round(s / 3600);
+    return `${h} hour${h === 1 ? "" : "s"}`;
+  }
+  if (s >= 60) {
+    const m = Math.round(s / 60);
+    return `${m} minute${m === 1 ? "" : "s"}`;
+  }
+  return `${s} seconds`;
+}
 var wait = (ms) => new Promise((r) => setTimeout(r, ms));
-async function postJson(url, body, audience, deps) {
+function errorFields(payload) {
+  const env = payload.error;
+  if (env && typeof env === "object") {
+    const e = env;
+    return { code: typeof e.code === "string" ? e.code : void 0, message: typeof e.message === "string" ? e.message : void 0 };
+  }
+  return {
+    code: typeof payload.code === "string" ? payload.code : void 0,
+    message: typeof env === "string" ? env : void 0,
+    retryable: payload.retryable === true ? true : void 0
+  };
+}
+var postJson = (url, body, audience, deps) => requestJson("POST", url, body, audience, deps);
+async function requestJson(method, url, body, audience, deps) {
   const doFetch = deps.fetch ?? fetch;
   const sleep = deps.sleep ?? wait;
   const max = deps.maxAttempts ?? 6;
@@ -31800,10 +31958,12 @@ async function postJson(url, body, audience, deps) {
     let res;
     try {
       const token = await deps.getToken(audience);
+      const headers = { authorization: `Bearer ${token}`, "content-type": "application/json", "user-agent": deps.userAgent ?? "prodgator-report/1" };
+      if (body === void 0) delete headers["content-type"];
       res = await doFetch(url, {
-        method: "POST",
-        headers: { authorization: `Bearer ${token}`, "content-type": "application/json", "user-agent": deps.userAgent ?? "prodgator-report/1" },
-        body: JSON.stringify(body),
+        method,
+        headers,
+        body: body === void 0 ? void 0 : JSON.stringify(body),
         // A redirect would carry the token to another address: never follow one.
         redirect: "manual",
         signal: AbortSignal.timeout(3e4)
@@ -31817,16 +31977,23 @@ async function postJson(url, body, audience, deps) {
       throw new ReportError(res.status, "REDIRECT_REFUSED", "Prodgator answered with a redirect; the token is never sent to a redirected address. Check prodgator-url.", false);
     }
     if (res.ok) return await res.clone().json();
-    const payload = await res.clone().json().catch(() => ({}));
+    const raw = await res.clone().json().catch(() => ({}));
+    const payload = errorFields(raw && typeof raw === "object" ? raw : {});
     const retryable = !(deps.fixedToken && payload.code === "TOKEN_EXPIRED") && (payload.retryable === true || RETRY_STATUS.has(res.status));
     const retryAfter = Number(res.headers.get("retry-after"));
-    last = new ReportError(
-      res.status,
-      payload.code ?? `HTTP_${res.status}`,
-      payload.error ?? res.statusText,
-      retryable,
-      Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1e3 : void 0
-    );
+    const retryAfterMs = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1e3 : void 0;
+    const code = payload.code ?? `HTTP_${res.status}`;
+    const message = payload.message ?? res.statusText;
+    if (retryable && retryAfterMs !== void 0 && retryAfterMs > MAX_RETRY_AFTER_MS) {
+      throw new ReportError(
+        res.status,
+        code,
+        `${message} (Prodgator asked to wait ${waitText(retryAfterMs)} before trying again, longer than prodgator-report waits, so it stopped)`,
+        false,
+        retryAfterMs
+      );
+    }
+    last = new ReportError(res.status, code, message, retryable, retryAfterMs);
     if (!retryable) throw last;
   }
   throw last;
@@ -31992,7 +32159,7 @@ async function run(deps = {}) {
       getToken: (aud) => c.getIDToken(aud),
       fetch: deps.fetch,
       sleep: deps.sleep,
-      userAgent: `prodgator-report-action/${true ? "1.3.0" : "dev"}`
+      userAgent: `prodgator-report-action/${true ? "1.4.1" : "dev"}`
     };
     const request = buildIngestRequest({ job: { name: inputs.jobName, matrix: inputs.matrix, runner: env.RUNNER_NAME || null }, name: inputs.name, summary: summary3, attestations, files });
     const res = await sendReport(inputs.prodgatorUrl, "github", request, inputs.audience, client);

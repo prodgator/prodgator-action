@@ -131,6 +131,8 @@ Status (`pass`, `fail`, `warn`, `info`) is derived by Prodgator from the data fo
 { "kind": "scan", "name": "trivy", "file": "trivy-results.sarif", "format": "sarif", "data": { "tool": "trivy", "failOn": "high" } }
 ```
 
+The counts match the open findings Prodgator reads from the same file: the `security-severity` score on the result, else on its rule (including rules inside `tool.extensions`, as ASH writes them), else the `level` (`error` is high, `warning` medium, `note` low). Results the scanner suppressed (every suppression has no status or status `accepted`) are sent as a separate `suppressed` count and never fail the scan. Results of kind `pass`, `notApplicable` or `informational`, and results with `baselineState` `absent`, are not counted, and a result repeated across runs counts once.
+
 A missing or empty file, or one outside the workspace, is skipped with a warning and the attestation is sent without the link.
 
 Prodgator reads findings from SARIF 2.1.0, CycloneDX JSON and SPDX JSON files. Run your scanner with SARIF output (for example `grype -o sarif` or `trivy --format sarif`) and use `"format": "sarif"`. `grype-json` and `trivy-json` are still accepted, but those files are only attached to the report: Prodgator reads no findings from them. See [Set up a scanner](https://docs.prodgator.io/security/uploads/scanners) for examples with ASH, Grype, Trivy, Semgrep, Checkov and Syft.
