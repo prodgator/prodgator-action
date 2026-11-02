@@ -68,6 +68,7 @@ With several build and test jobs, add a `report` job with `needs: [build, test]`
 | `matrix` | (none) | In matrix jobs, pass `${{ toJSON(matrix) }}` so each leg keeps its own report. |
 | `junit` | (none) | Globs of JUnit XML files. The files are summed into one `test-results` attestation. |
 | `junit-name` | (none) | The name of the `test-results` attestation the JUnit files are summed into. Default: `junit`. |
+| `coverage` | (none) | Globs of Cobertura XML or LCOV files. The files are summed into one `coverage` attestation (line and branch percentages) and uploaded as artifacts. |
 | `artifacts` | (none) | Globs of files to upload (newline or comma separated). |
 | `attestations` | (none) | Attestations as inline JSON or a path to a JSON file. See Attestation kinds below. |
 | `ownership` | (none) | Path of a `CODEOWNERS` file or a Prodgator ownership JSON file, sent for code owners rules on pull requests. See Ownership reports below. |
