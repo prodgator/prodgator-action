@@ -1,0 +1,40 @@
+{
+  "name": "@prodgator/report",
+  "version": "1.0.0",
+  "description": "Send CI job summaries, test results, attestations and artifacts to Prodgator, authenticated with the CI system's OIDC token",
+  "license": "MIT",
+  "homepage": "https://docs.prodgator.io/pipelines/run-reports",
+  "bin": {
+    "prodgator-report": "dist/cli.js",
+    "prodgator": "dist/cli.js"
+  },
+  "files": [
+    "dist/cli.js",
+    "dist/cli.js.LEGAL.txt",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build:azure-task": "node scripts/build-azure-task.mjs",
+    "release:prepare": "node scripts/prepare-release.mjs"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.11.2",
+    "tinyglobby": "^0.2.17"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "azure-pipelines-task-lib": "^5.281.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  }
+}

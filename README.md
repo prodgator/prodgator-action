@@ -221,32 +221,22 @@ When you don't pass `summary` or `summary-file`, the action reads the sibling `s
 
 ## Verify this bundle
 
-GitHub runs the committed `dist/index.js`. It is built from `packages/prodgator-action` in [prodgator/prodgator](https://github.com/prodgator/prodgator) at the commit in `SOURCE_COMMIT`. `VERSION` is that package's `package.json` version. The bundle sends `prodgator-report-action/<VERSION>` as its user agent.
+This repository holds the action's source in `packages/`, next to the bundle the workflow runs (`dist/index.js`). `VERSION` names the version the bundle reports, and `SOURCE_COMMIT` names the upstream commit the files were taken from. A Verify dist workflow rebuilds `dist` on every push and pull request and fails on any difference in `dist/`, `action.yml`, `LICENSE` or `SECURITY.md`, or when `VERSION` does not match the package version.
 
-Rebuild it with read access to that repository. The source has no `.nvmrc` and no mise file; use Node.js 24, which is what its CI uses. The action imports `packages/prodgator-report`, so install both packages from their lockfiles. Do not link `node_modules`.
+## Rebuild from this repository
+
+The build is reproducible byte for byte. With Node.js 24, from a clone at the commit or tag you use:
 
 ```bash
-sha=$(tr -d '[:space:]' < SOURCE_COMMIT)
-git clone https://github.com/prodgator/prodgator.git prodgator-source
-git -C prodgator-source checkout "$sha"
-
-cd prodgator-source
 npm ci --prefix packages/prodgator-report
 npm ci --prefix packages/prodgator-action
-version=$(node -p "require('./packages/prodgator-action/package.json').version")
-(cd packages/prodgator-action && ACTION_VERSION="$version" npm run build)
+(cd packages/prodgator-action && ACTION_VERSION="$(cat ../../VERSION)" npm run build)
+diff -r dist packages/prodgator-action/dist
+diff action.yml packages/prodgator-action/action.yml
 ```
 
-`npm run build` runs `node scripts/build.mjs`. `ACTION_VERSION` must be the package version (`1.2.3`, with no leading `v`). If you leave it unset, the bundle reports `dev` and will not match.
-
-Then compare. An empty diff means this repository is that build:
+Both `diff` commands print nothing when the bundle matches the source. To run the tests:
 
 ```bash
-diff -ru dist prodgator-source/packages/prodgator-action/dist
-diff -u action.yml prodgator-source/packages/prodgator-action/action.yml
-printf '%s\n' "$version" | diff -u VERSION -
+(cd packages/prodgator-action && npm test)
 ```
-
-`.github/workflows/verify-dist.yml` runs these steps on every push and pull request. It checks out `prodgator/prodgator` at `SOURCE_COMMIT` with the job's read-only token (`contents: read`, and the checkout does not persist credentials), builds, and fails with a short diff (file list, checksums, and the first differing bytes) when `dist/`, `action.yml`, or `VERSION` disagree.
-
-A build of this commit is reproducible byte for byte, including from two different directories: `dist/index.js` and `dist/index.js.LEGAL.txt` do not contain absolute paths or timestamps, so the workflow compares the files directly.

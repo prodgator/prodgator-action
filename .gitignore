@@ -1,0 +1,2 @@
+# The build output under packages/ is ignored by the package's own .gitignore.
+node_modules/
