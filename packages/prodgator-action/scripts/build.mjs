@@ -6,7 +6,8 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
 
 /**
  * The version the bundle reports in its user agent (`prodgator-report-action/<version>`): ACTION_VERSION when set
- * (scripts/release-action.ts sets it from the release tag), else `dev` for local and CI builds.
+ * (the mirror workflow and the public repository's Verify dist set it from package.json), else `dev` for local and
+ * CI builds.
  */
 export function actionVersion(env = process.env) {
   const raw = env.ACTION_VERSION?.trim();

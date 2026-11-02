@@ -32473,7 +32473,7 @@ async function run(deps = {}) {
       getToken: (aud) => c.getIDToken(aud),
       fetch: deps.fetch,
       sleep: deps.sleep,
-      userAgent: `prodgator-report-action/${true ? "1.3.0" : "dev"}`
+      userAgent: `prodgator-report-action/${true ? "1.5.0" : "dev"}`
     };
     const request = buildIngestRequest({ job: { name: inputs.jobName, matrix: inputs.matrix, runner: env.RUNNER_NAME || null }, name: inputs.name, summary: summary3, attestations, files });
     const res = await sendReport(inputs.prodgatorUrl, "github", request, inputs.audience, client);
