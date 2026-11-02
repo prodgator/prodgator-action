@@ -1,0 +1,150 @@
+name: Verify dist
+
+# Rebuild packages/prodgator-action from prodgator/prodgator at SOURCE_COMMIT and fail
+# when this repository's dist/, action.yml, or VERSION has drifted from that build.
+# The source repository has no .nvmrc and no mise file. Its CI sets NODE_VERSION to 24.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  verify:
+    name: Verify dist
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout this action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read SOURCE_COMMIT
+        id: pin
+        run: |
+          set -eu
+          sha=$(tr -d '[:space:]' < SOURCE_COMMIT)
+          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::SOURCE_COMMIT must be the 40-character sha of a prodgator/prodgator commit"
+            exit 1
+          fi
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "Pinned prodgator/prodgator at ${sha}"
+
+      - name: Checkout prodgator source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: prodgator/prodgator
+          ref: ${{ steps.pin.outputs.sha }}
+          path: source
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install and build
+        working-directory: source
+        run: |
+          set -eu
+          # The action entry imports packages/prodgator-report/src/core, and that
+          # package brings its own lockfile (fast-xml-parser). Install both with
+          # npm ci. Do not link node_modules.
+          npm ci --prefix packages/prodgator-report
+          npm ci --prefix packages/prodgator-action
+          version=$(node -p "require('./packages/prodgator-action/package.json').version")
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::package.json version must look like 1.2.3, got ${version}"
+            exit 1
+          fi
+          echo "Building with ACTION_VERSION=${version}"
+          (cd packages/prodgator-action && ACTION_VERSION="$version" npm run build)
+
+      - name: Compare dist, action.yml, and version
+        run: |
+          set -u
+          fail=0
+          src=source/packages/prodgator-action
+          src_ver=$(node -p "require('./${src}/package.json').version")
+          pub_ver=$(tr -d '[:space:]' < VERSION)
+          echo "VERSION file: ${pub_ver}"
+          echo "pinned package.json: ${src_ver}"
+          if [ "${pub_ver}" != "${src_ver}" ]; then
+            echo "::error::VERSION is '${pub_ver}' but packages/prodgator-action/package.json at SOURCE_COMMIT is '${src_ver}'"
+            fail=1
+          fi
+
+          echo "action.yml:"
+          if diff -u action.yml "${src}/action.yml"; then
+            echo "action.yml matches"
+          else
+            echo "::error::action.yml differs from the pinned source"
+            fail=1
+          fi
+
+          if ! node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const ver = process.argv[1];
+            const built = process.argv[2];
+            const needle = `prodgator-report-action/\${true ? "${ver}" : "dev"}`;
+            let bad = false;
+            for (const file of ["dist/index.js", built]) {
+              const text = readFileSync(file, "utf8");
+              if (!text.includes(needle)) {
+                console.error(`::error::${file} user agent is not prodgator-report-action/${ver}`);
+                bad = true;
+              } else {
+                console.log(`${file} user agent is prodgator-report-action/${ver}`);
+              }
+            }
+            if (bad) process.exit(1);
+          ' "${src_ver}" "${src}/dist/index.js"; then
+            fail=1
+          fi
+
+          echo "dist/:"
+          if diff -rq dist "${src}/dist"; then
+            echo "dist/ matches"
+          else
+            echo "::error::dist/ differs from the build of SOURCE_COMMIT"
+            fail=1
+            python3 - <<'PY'
+          import hashlib, os, sys
+          committed, built = "dist", "source/packages/prodgator-action/dist"
+          def files(root):
+              out = {}
+              for dirpath, _, names in os.walk(root):
+                  for name in names:
+                      path = os.path.join(dirpath, name)
+                      out[os.path.relpath(path, root)] = path
+              return out
+          a, b = files(committed), files(built)
+          for rel in sorted(set(a) | set(b)):
+              if rel not in a or rel not in b:
+                  print(f"only in one tree: {rel}")
+                  continue
+              da, db = open(a[rel], "rb").read(), open(b[rel], "rb").read()
+              if da == db:
+                  continue
+              print(f"differs: {rel}")
+              print(f"  committed {hashlib.sha256(da).hexdigest()} ({len(da)} bytes)")
+              print(f"  built     {hashlib.sha256(db).hexdigest()} ({len(db)} bytes)")
+              limit = min(len(da), len(db))
+              offset = next((i for i in range(limit) if da[i] != db[i]), limit)
+              print(f"  first difference at byte {offset}")
+              window = 40
+              start = max(0, offset - 10)
+              print(f"  committed bytes {da[start:start+window]!r}")
+              print(f"  built bytes     {db[start:start+window]!r}")
+          PY
+          fi
+
+          if [ "${fail}" -ne 0 ]; then
+            exit 1
+          fi

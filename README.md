@@ -217,3 +217,35 @@ When you don't pass `summary` or `summary-file`, the action reads the sibling `s
 - **`RUN_NOT_FOUND`, then the action succeeds anyway**: Prodgator had not yet received this run's webhook when the report arrived. The action retries for about 90 seconds; if it still fails, the job step warns (or fails, with `fail-on-error: true`) but does not block the workflow.
 - **"Add `permissions: id-token: write`..."**: the job or workflow is missing OIDC permissions. Add `permissions: id-token: write` at the job or workflow level.
 - **GitHub Enterprise Server with a custom OIDC issuer**: not supported yet. The action expects `github.com`'s OIDC issuer.
+
+## Verify this bundle
+
+GitHub runs the committed `dist/index.js`. It is built from `packages/prodgator-action` in [prodgator/prodgator](https://github.com/prodgator/prodgator) at the commit in `SOURCE_COMMIT`. `VERSION` is that package's `package.json` version. The bundle sends `prodgator-report-action/<VERSION>` as its user agent.
+
+Rebuild it with read access to that repository. The source has no `.nvmrc` and no mise file; use Node.js 24, which is what its CI uses. The action imports `packages/prodgator-report`, so install both packages from their lockfiles. Do not link `node_modules`.
+
+```bash
+sha=$(tr -d '[:space:]' < SOURCE_COMMIT)
+git clone https://github.com/prodgator/prodgator.git prodgator-source
+git -C prodgator-source checkout "$sha"
+
+cd prodgator-source
+npm ci --prefix packages/prodgator-report
+npm ci --prefix packages/prodgator-action
+version=$(node -p "require('./packages/prodgator-action/package.json').version")
+(cd packages/prodgator-action && ACTION_VERSION="$version" npm run build)
+```
+
+`npm run build` runs `node scripts/build.mjs`. `ACTION_VERSION` must be the package version (`1.2.3`, with no leading `v`). If you leave it unset, the bundle reports `dev` and will not match.
+
+Then compare. An empty diff means this repository is that build:
+
+```bash
+diff -ru dist prodgator-source/packages/prodgator-action/dist
+diff -u action.yml prodgator-source/packages/prodgator-action/action.yml
+printf '%s\n' "$version" | diff -u VERSION -
+```
+
+`.github/workflows/verify-dist.yml` runs these steps on every push and pull request. It checks out `prodgator/prodgator` at `SOURCE_COMMIT` with the job's read-only token (`contents: read`, and the checkout does not persist credentials), builds, and fails with a short diff (file list, checksums, and the first differing bytes) when `dist/`, `action.yml`, or `VERSION` disagree.
+
+A build of this commit is reproducible byte for byte, including from two different directories: `dist/index.js` and `dist/index.js.LEGAL.txt` do not contain absolute paths or timestamps, so the workflow compares the files directly.
