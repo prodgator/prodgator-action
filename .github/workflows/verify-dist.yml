@@ -1,0 +1,177 @@
+name: Verify dist
+
+# Rebuild dist/ from the source in this repository (packages/prodgator-action and
+# packages/prodgator-report/src/core) and fail when the committed dist/, action.yml,
+# LICENSE or SECURITY.md differ from that build. Nothing outside this repository is
+# checked out.
+#
+# SOURCE_COMMIT is provenance only: the upstream commit this tree was taken from.
+# The build does not read it.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-dist-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  verify:
+    name: Verify dist
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Check VERSION and SOURCE_COMMIT
+        id: meta
+        run: |
+          set -eu
+          version=$(tr -d '[:space:]' < VERSION)
+          pkg=$(node -p "require('./packages/prodgator-action/package.json').version")
+          source_commit=$(tr -d '[:space:]' < SOURCE_COMMIT)
+          fail=0
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::VERSION must look like 1.2.3, got '${version}'"
+            fail=1
+          fi
+          if [ "$version" != "$pkg" ]; then
+            echo "::error::VERSION is '${version}' but packages/prodgator-action/package.json is '${pkg}'"
+            fail=1
+          fi
+          if ! printf '%s' "$source_commit" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::SOURCE_COMMIT must be a 40-character lowercase hex commit sha"
+            fail=1
+          fi
+          if [ "$fail" -ne 0 ]; then
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "source_commit=${source_commit}" >> "$GITHUB_OUTPUT"
+
+      - name: Install
+        run: |
+          set -eu
+          # The action imports packages/prodgator-report/src/core, which has its own
+          # lockfile (fast-xml-parser). Install both with npm ci.
+          npm ci --prefix packages/prodgator-report
+          npm ci --prefix packages/prodgator-action
+
+      - name: Typecheck and test
+        working-directory: packages/prodgator-action
+        run: |
+          set -eu
+          npm run typecheck
+          npm test
+
+      - name: Build
+        working-directory: packages/prodgator-action
+        env:
+          ACTION_VERSION: ${{ steps.meta.outputs.version }}
+        run: npm run build
+
+      - name: Compare the committed files with the build
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          SOURCE_COMMIT: ${{ steps.meta.outputs.source_commit }}
+        run: |
+          set -u
+          fail=0
+          pkg=packages/prodgator-action
+
+          echo "dist/:"
+          if diff -rq dist "${pkg}/dist"; then
+            echo "dist/ matches"
+          else
+            echo "::error::dist/ differs from the build of the source in this repository"
+            fail=1
+          python3 - <<'PY'
+          import hashlib, os, sys
+          committed, built = "dist", "packages/prodgator-action/dist"
+          def files(root):
+              out = {}
+              for dirpath, _, names in os.walk(root):
+                  for name in names:
+                      path = os.path.join(dirpath, name)
+                      out[os.path.relpath(path, root)] = path
+              return out
+          a, b = files(committed), files(built)
+          for rel in sorted(set(a) | set(b)):
+              if rel not in a or rel not in b:
+                  print(f"only in one tree: {rel}")
+                  continue
+              da, db = open(a[rel], "rb").read(), open(b[rel], "rb").read()
+              if da == db:
+                  continue
+              print(f"differs: {rel}")
+              print(f"  committed {hashlib.sha256(da).hexdigest()} ({len(da)} bytes)")
+              print(f"  built     {hashlib.sha256(db).hexdigest()} ({len(db)} bytes)")
+              limit = min(len(da), len(db))
+              offset = next((i for i in range(limit) if da[i] != db[i]), limit)
+              print(f"  first difference at byte {offset}")
+              window = 40
+              start = max(0, offset - 10)
+              print(f"  committed bytes {da[start:start+window]!r}")
+              print(f"  built bytes     {db[start:start+window]!r}")
+          PY
+          fi
+
+          echo "action.yml:"
+          if diff -u action.yml "${pkg}/action.yml"; then
+            echo "action.yml matches"
+          else
+            echo "::error::action.yml differs from ${pkg}/action.yml"
+            fail=1
+          fi
+
+          for f in LICENSE SECURITY.md; do
+            if diff -u "$f" "${pkg}/$f"; then
+              echo "$f matches"
+            else
+              echo "::error::$f differs from ${pkg}/$f"
+              fail=1
+            fi
+          done
+
+          if ! node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const ver = process.argv[1];
+            const needle = `prodgator-report-action/\${true ? "${ver}" : "dev"}`;
+            const text = readFileSync("dist/index.js", "utf8");
+            if (!text.includes(needle)) {
+              console.error(`::error::dist/index.js user agent is not prodgator-report-action/${ver}`);
+              process.exit(1);
+            }
+            console.log(`dist/index.js user agent is prodgator-report-action/${ver}`);
+          ' "${VERSION}"; then
+            fail=1
+          fi
+
+          if [ "$fail" -eq 0 ]; then result=passed; else result=failed; fi
+          {
+            echo "### Verify dist"
+            echo
+            echo "- VERSION: ${VERSION}"
+            echo "- SOURCE_COMMIT: ${SOURCE_COMMIT}"
+            echo "- Result: ${result}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$fail" -ne 0 ]; then
+            exit 1
+          fi

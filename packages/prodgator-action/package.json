@@ -1,0 +1,33 @@
+{
+  "name": "prodgator-report-action",
+  "version": "1.5.0",
+  "private": true,
+  "description": "Send GitHub Actions job summaries, attestations and artifacts to Prodgator",
+  "license": "MIT",
+  "homepage": "https://github.com/prodgator/prodgator-action#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prodgator/prodgator-action.git"
+  },
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "mirror": "node scripts/mirror.mjs"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/glob": "^0.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12",
+    "yaml": "^2.9.1"
+  }
+}

@@ -27,6 +27,9 @@ inputs:
   junit-name:
     description: The name of the test-results attestation the JUnit files are summed into. Defaults to junit.
     required: false
+  coverage:
+    description: Globs of Cobertura XML or LCOV coverage files. Summed into one coverage attestation (line and branch percentages), and the files are uploaded as artifacts.
+    required: false
   artifacts:
     description: Globs of files to upload (newline or comma separated).
     required: false

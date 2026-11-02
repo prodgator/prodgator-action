@@ -2098,6 +2098,7 @@ var require_dispatcher = __commonJS({
 var require_dispatcher_base = __commonJS({
   "node_modules/undici/lib/dispatcher/dispatcher-base.js"(exports2, module2) {
     "use strict";
+    var buffer = require("node:buffer");
     var Dispatcher = require_dispatcher();
     var {
       ClientDestroyedError,
@@ -2109,6 +2110,7 @@ var require_dispatcher_base = __commonJS({
     var kOnClosed = Symbol("onClosed");
     var kInterceptedDispatch = Symbol("Intercepted Dispatch");
     var kWebSocketOptions = Symbol("webSocketOptions");
+    var kEventSourceOptions = Symbol("eventSourceOptions");
     var DispatcherBase = class extends Dispatcher {
       constructor(opts) {
         super();
@@ -2117,11 +2119,17 @@ var require_dispatcher_base = __commonJS({
         this[kClosed] = false;
         this[kOnClosed] = [];
         this[kWebSocketOptions] = opts?.webSocket ?? {};
+        this[kEventSourceOptions] = opts?.eventSource ?? {};
       }
       get webSocketOptions() {
         return {
           maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
           maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
+        };
+      }
+      get eventSourceOptions() {
+        return {
+          maxEventSize: this[kEventSourceOptions].maxEventSize ?? buffer.kStringMaxLength
         };
       }
       get destroyed() {
@@ -4382,9 +4390,9 @@ var require_util2 = __commonJS({
     var parseHashWithOptions = /(?<algo>sha256|sha384|sha512)-((?<hash>[A-Za-z0-9+/]+|[A-Za-z0-9_-]+)={0,2}(?:\s|$)( +[!-~]*)?)?/i;
     function parseMetadata(metadata) {
       const result = [];
-      let empty2 = true;
+      let empty3 = true;
       for (const token of metadata.split(" ")) {
-        empty2 = false;
+        empty3 = false;
         const parsedToken = parseHashWithOptions.exec(token);
         if (parsedToken === null || parsedToken.groups === void 0 || parsedToken.groups.algo === void 0) {
           continue;
@@ -4394,7 +4402,7 @@ var require_util2 = __commonJS({
           result.push(parsedToken.groups);
         }
       }
-      if (empty2 === true) {
+      if (empty3 === true) {
         return "no metadata";
       }
       return result;
@@ -6240,8 +6248,8 @@ var require_client_h1 = __commonJS({
         }
       }
     };
-    function onParserTimeout(parser2) {
-      const { socket, timeoutType, client, paused } = parser2.deref();
+    function onParserTimeout(parser3) {
+      const { socket, timeoutType, client, paused } = parser3.deref();
       if (timeoutType === TIMEOUT_HEADERS) {
         if (!socket[kWriting] || socket.writableNeedDrain || client[kRunning] > 1) {
           assert(!paused, "cannot be paused while waiting for headers");
@@ -6271,10 +6279,9 @@ var require_client_h1 = __commonJS({
       socket[kSocketUsed] = false;
       socket[kParser] = new Parser(client, socket, llhttpInstance);
       addListener(socket, "error", function(err) {
-        assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
-        const parser2 = this[kParser];
-        if (err.code === "ECONNRESET" && parser2.statusCode && !parser2.shouldKeepAlive) {
-          const parserErr = parser2.finish();
+        const parser3 = this[kParser];
+        if (err.code === "ECONNRESET" && parser3.statusCode && !parser3.shouldKeepAlive) {
+          const parserErr = parser3.finish();
           if (parserErr) {
             this[kError] = parserErr;
             this[kClient][kOnError](parserErr);
@@ -6285,15 +6292,15 @@ var require_client_h1 = __commonJS({
         this[kClient][kOnError](err);
       });
       addListener(socket, "readable", function() {
-        const parser2 = this[kParser];
-        if (parser2) {
-          parser2.readMore();
+        const parser3 = this[kParser];
+        if (parser3) {
+          parser3.readMore();
         }
       });
       addListener(socket, "end", function() {
-        const parser2 = this[kParser];
-        if (parser2.statusCode && !parser2.shouldKeepAlive) {
-          const parserErr = parser2.finish();
+        const parser3 = this[kParser];
+        if (parser3.statusCode && !parser3.shouldKeepAlive) {
+          const parserErr = parser3.finish();
           if (parserErr) {
             util.destroy(this, parserErr);
           }
@@ -6303,11 +6310,11 @@ var require_client_h1 = __commonJS({
       });
       addListener(socket, "close", function() {
         const client2 = this[kClient];
-        const parser2 = this[kParser];
+        const parser3 = this[kParser];
         clearIdleSocketValidation(this);
-        if (parser2) {
-          if (!this[kError] && parser2.statusCode && !parser2.shouldKeepAlive) {
-            this[kError] = parser2.finish() || this[kError];
+        if (parser3) {
+          if (!this[kError] && parser3.statusCode && !parser3.shouldKeepAlive) {
+            this[kError] = parser3.finish() || this[kError];
           }
           this[kParser].destroy();
           this[kParser] = null;
@@ -6955,7 +6962,6 @@ var require_client_h2 = __commonJS({
       client[kHTTP2Session] = session;
       socket[kHTTP2Session] = session;
       util.addListener(socket, "error", function(err) {
-        assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
         this[kError] = err;
         this[kClient][kOnError](err);
       });
@@ -7014,7 +7020,6 @@ var require_client_h2 = __commonJS({
       }
     }
     function onHttp2SessionError(err) {
-      assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
       this[kSocket][kError] = err;
       this[kClient][kOnError](err);
     }
@@ -7708,9 +7713,10 @@ var require_client = __commonJS({
         // h2
         maxConcurrentStreams,
         allowH2,
-        webSocket
+        webSocket,
+        eventSource
       } = {}) {
-        super({ webSocket });
+        super({ webSocket, eventSource });
         if (keepAlive !== void 0) {
           throw new InvalidArgumentError("unsupported keepAlive, use pipelining=0 instead");
         }
@@ -8607,7 +8613,7 @@ var require_agent = __commonJS({
       return opts && opts.connections === 1 ? new Client(origin, opts) : new Pool(origin, opts);
     }
     var Agent3 = class extends DispatcherBase {
-      constructor({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
+      constructor({ factory = defaultFactory, maxRedirections = 0, connect, tls, ...options } = {}) {
         if (typeof factory !== "function") {
           throw new InvalidArgumentError("factory must be a function.");
         }
@@ -8621,8 +8627,11 @@ var require_agent = __commonJS({
         if (connect && typeof connect !== "function") {
           connect = { ...connect };
         }
+        if (tls && typeof tls !== "function") {
+          tls = { ...tls };
+        }
         this[kInterceptors] = options.interceptors?.Agent && Array.isArray(options.interceptors.Agent) ? options.interceptors.Agent : [createRedirectInterceptor({ maxRedirections })];
-        this[kOptions] = { ...util.deepClone(options), connect };
+        this[kOptions] = { ...util.deepClone(options), connect, tls };
         this[kOptions].interceptors = options.interceptors ? { ...options.interceptors } : void 0;
         this[kMaxRedirections] = maxRedirections;
         this[kFactory] = factory;
@@ -14350,8 +14359,9 @@ var require_fetch = __commonJS({
         }
       );
       response.body = { stream, source: null, length: null };
-      fetchParams.controller.onAborted = onAborted;
-      fetchParams.controller.on("terminated", onAborted);
+      if (!fetchParams.controller.resume) {
+        fetchParams.controller.on("terminated", onAborted);
+      }
       fetchParams.controller.resume = async () => {
         while (true) {
           let bytes;
@@ -14451,7 +14461,6 @@ var require_fetch = __commonJS({
                 headersList.append(bufferToLowerCasedHeaderName(rawHeaders[i]), rawHeaders[i + 1].toString("latin1"), true);
               }
               location = headersList.get("location", true);
-              this.body = new Readable({ read: resume });
               const decoders = [];
               const willFollow = location && request.redirect === "follow" && redirectStatusSet.has(status);
               if (request.method !== "HEAD" && request.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) {
@@ -14459,7 +14468,7 @@ var require_fetch = __commonJS({
                 const codings = contentEncoding ? contentEncoding.toLowerCase().split(",") : [];
                 const maxContentEncodings = 5;
                 if (codings.length > maxContentEncodings) {
-                  reject(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
+                  this.abort(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
                   return true;
                 }
                 for (let i = codings.length - 1; i >= 0; --i) {
@@ -14489,6 +14498,7 @@ var require_fetch = __commonJS({
                   }
                 }
               }
+              this.body = new Readable({ read: resume });
               const onError = this.onError.bind(this);
               resolve5({
                 status,
@@ -14513,9 +14523,6 @@ var require_fetch = __commonJS({
             onComplete() {
               if (this.abort) {
                 fetchParams.controller.off("terminated", this.abort);
-              }
-              if (fetchParams.controller.onAborted) {
-                fetchParams.controller.off("terminated", fetchParams.controller.onAborted);
               }
               fetchParams.controller.ended = true;
               this.body.push(null);
@@ -17590,6 +17597,16 @@ var require_receiver = __commonJS({
             if (isControlFrame(this.#info.opcode)) {
               this.#loop = this.parseControlFrame(body);
               this.#state = parserStates.INFO;
+              const socket = this.ws[kResponse].socket;
+              if (this.#loop && socket.writableNeedDrain) {
+                this.#loop = false;
+                socket.once("drain", () => {
+                  if (this.destroyed) return;
+                  this.#loop = true;
+                  this.run(callback);
+                });
+                return;
+              }
             } else {
               if (!this.#info.compressed) {
                 if (!this.writeFragments(body)) {
@@ -18134,14 +18151,14 @@ var require_websocket = __commonJS({
         const webSocketOptions = this[kController]?.dispatcher?.webSocketOptions;
         const maxFragments = webSocketOptions?.maxFragments;
         const maxPayloadSize = webSocketOptions?.maxPayloadSize;
-        const parser2 = new ByteParser(this, parsedExtensions, {
+        const parser3 = new ByteParser(this, parsedExtensions, {
           maxFragments,
           maxPayloadSize
         });
-        parser2.on("drain", onParserDrain);
-        parser2.on("error", onParserError.bind(this));
+        parser3.on("drain", onParserDrain);
+        parser3.on("error", onParserError.bind(this));
         response.socket.ws = this;
-        this[kByteParser] = parser2;
+        this[kByteParser] = parser3;
         this.#sendQueue = new SendQueue(response.socket);
         this[kReadyState] = states.OPEN;
         const extensions = response.headersList.get("sec-websocket-extensions");
@@ -18283,6 +18300,7 @@ var require_util8 = __commonJS({
 var require_eventsource_stream = __commonJS({
   "node_modules/undici/lib/web/eventsource/eventsource-stream.js"(exports2, module2) {
     "use strict";
+    var buffer = require("node:buffer");
     var { Transform } = require("node:stream");
     var { isASCIINumber, isValidLastEventId } = require_util8();
     var BOM = [239, 187, 191];
@@ -18290,24 +18308,28 @@ var require_eventsource_stream = __commonJS({
     var CR = 13;
     var COLON = 58;
     var SPACE = 32;
+    var defaultMaxEventSize = buffer.kStringMaxLength;
     var DATA = Buffer.from("data");
     var EVENT = Buffer.from("event");
     var ID = Buffer.from("id");
     var RETRY = Buffer.from("retry");
-    function isASCIINumberBytes(buffer, start) {
-      if (start >= buffer.length) {
+    var minParserItems = 1024;
+    var maxParserItems = 131072;
+    var bytesPerParserItem = 128;
+    function isASCIINumberBytes(buffer2, start) {
+      if (start >= buffer2.length) {
         return false;
       }
-      for (let i = start; i < buffer.length; i++) {
-        if (buffer[i] < 48 || buffer[i] > 57) {
+      for (let i = start; i < buffer2.length; i++) {
+        if (buffer2[i] < 48 || buffer2[i] > 57) {
           return false;
         }
       }
       return true;
     }
-    function isValidLastEventIdBytes(buffer, start) {
-      for (let i = start; i < buffer.length; i++) {
-        if (buffer[i] === 0) {
+    function isValidLastEventIdBytes(buffer2, start) {
+      for (let i = start; i < buffer2.length; i++) {
+        if (buffer2[i] === 0) {
           return false;
         }
       }
@@ -18323,6 +18345,11 @@ var require_eventsource_stream = __commonJS({
         }
       }
       return true;
+    }
+    function createMaxEventSizeExceededError() {
+      const error2 = new Error("EventSource message size exceeded");
+      error2.aborted = false;
+      return error2;
     }
     var EventSourceStream = class extends Transform {
       /**
@@ -18350,6 +18377,13 @@ var require_eventsource_stream = __commonJS({
       pos = 0;
       lineChunkIndex = 0;
       linePos = 0;
+      lineLength = 0;
+      eventSize = 0;
+      eventFieldSizes = { data: 0, event: 0, id: 0, retry: 0 };
+      dataLineCount = 0;
+      maxEventSize;
+      maxDataLines;
+      maxBufferedChunks;
       event = {
         data: void 0,
         event: void 0,
@@ -18358,6 +18392,7 @@ var require_eventsource_stream = __commonJS({
       };
       /**
        * @param {object} options
+       * @param {number} [options.maxEventSize]
        * @param {eventSourceSettings} options.eventSourceSettings
        * @param {Function} [options.push]
        */
@@ -18365,6 +18400,10 @@ var require_eventsource_stream = __commonJS({
         options.readableObjectMode = true;
         super(options);
         this.state = options.eventSourceSettings || {};
+        this.maxEventSize = options.maxEventSize ?? defaultMaxEventSize;
+        const parserItemLimit = this.maxEventSize > 0 ? Math.min(maxParserItems, Math.max(minParserItems, Math.floor(this.maxEventSize / bytesPerParserItem))) : 0;
+        this.maxDataLines = parserItemLimit;
+        this.maxBufferedChunks = parserItemLimit;
         if (options.push) {
           this.push = options.push;
         }
@@ -18378,6 +18417,10 @@ var require_eventsource_stream = __commonJS({
       _transform(chunk, _encoding, callback) {
         if (chunk.length === 0) {
           callback();
+          return;
+        }
+        if (this.maxEventSize > 0 && this.chunks.length >= this.maxBufferedChunks && chunk[0] !== LF && chunk[0] !== CR) {
+          callback(createMaxEventSizeExceededError());
           return;
         }
         this.chunks.push(chunk);
@@ -18416,18 +18459,32 @@ var require_eventsource_stream = __commonJS({
             if (byte === CR) {
               this.crlfCheck = true;
             }
-            this.parseLine(this.readLine(), this.event);
+            try {
+              this.parseLine(this.readLine(), this.event);
+            } catch (error2) {
+              callback(error2);
+              return;
+            }
             this.consumeCurrentByte();
             this.eventEndCheck = true;
             continue;
+          }
+          if (this.maxEventSize > 0 && ++this.lineLength > this.maxEventSize + 7) {
+            callback(createMaxEventSizeExceededError());
+            return;
           }
           this.advanceCursor();
         }
         callback();
       }
+      _destroy(error2, callback) {
+        this.chunks.length = 0;
+        this.clearEvent();
+        super._destroy(error2, callback);
+      }
       /**
        * @param {Buffer} line
-       * @param {EventStreamEvent} event
+       * @param {EventSourceStreamEvent} event
        */
       parseLine(line, event) {
         if (line.length === 0) {
@@ -18447,6 +18504,12 @@ var require_eventsource_stream = __commonJS({
           }
         }
         if (isFieldName(line, fieldLength, DATA)) {
+          if (this.maxEventSize > 0 && this.dataLineCount >= this.maxDataLines) {
+            throw createMaxEventSizeExceededError();
+          }
+          const valueBytes = line.length - valueStart;
+          const dataSize = this.eventFieldSizes.data + (event.data === void 0 ? 0 : 1) + valueBytes;
+          this.setEventFieldSize("data", dataSize);
           const value = line.toString("utf8", valueStart);
           if (event.data === void 0) {
             event.data = value;
@@ -18454,26 +18517,37 @@ var require_eventsource_stream = __commonJS({
             event.data += `
 ${value}`;
           }
+          this.dataLineCount++;
           return;
         }
         if (isFieldName(line, fieldLength, RETRY)) {
           if (isASCIINumberBytes(line, valueStart)) {
+            this.setEventFieldSize("retry", line.length - valueStart);
             event.retry = line.toString("utf8", valueStart);
           }
           return;
         }
         if (isFieldName(line, fieldLength, ID)) {
           if (isValidLastEventIdBytes(line, valueStart)) {
+            this.setEventFieldSize("id", line.length - valueStart);
             event.id = line.toString("utf8", valueStart);
           }
           return;
         }
         if (isFieldName(line, fieldLength, EVENT)) {
-          const value = line.toString("utf8", valueStart);
-          if (value.length > 0) {
-            event.event = value;
+          if (valueStart < line.length) {
+            this.setEventFieldSize("event", line.length - valueStart);
+            event.event = line.toString("utf8", valueStart);
           }
         }
+      }
+      setEventFieldSize(field, size) {
+        const eventSize = this.eventSize - this.eventFieldSizes[field] + size;
+        if (this.maxEventSize > 0 && eventSize > this.maxEventSize) {
+          throw createMaxEventSizeExceededError();
+        }
+        this.eventSize = eventSize;
+        this.eventFieldSizes[field] = size;
       }
       /**
        * @param {EventSourceStreamEvent} event
@@ -18501,6 +18575,12 @@ ${value}`;
         this.event.event = void 0;
         this.event.id = void 0;
         this.event.retry = void 0;
+        this.eventSize = 0;
+        this.dataLineCount = 0;
+        this.eventFieldSizes.data = 0;
+        this.eventFieldSizes.event = 0;
+        this.eventFieldSizes.id = 0;
+        this.eventFieldSizes.retry = 0;
       }
       hasPendingEvent() {
         return this.event.data !== void 0 || this.event.event !== void 0 || this.event.id !== void 0 || this.event.retry !== void 0;
@@ -18525,13 +18605,15 @@ ${value}`;
       syncLineStartToCursor() {
         this.lineChunkIndex = this.chunkIndex;
         this.linePos = this.pos;
+        this.lineLength = 0;
         this.dropConsumedChunks();
       }
       dropConsumedChunks() {
-        while (this.lineChunkIndex > 0) {
-          this.chunks.shift();
-          this.lineChunkIndex--;
-          this.chunkIndex--;
+        if (this.lineChunkIndex > 0) {
+          const consumed = this.lineChunkIndex;
+          this.chunks.splice(0, consumed);
+          this.lineChunkIndex = 0;
+          this.chunkIndex -= consumed;
         }
         if (this.chunkIndex === this.chunks.length) {
           this.chunks.length = 0;
@@ -18634,6 +18716,7 @@ var require_eventsource = __commonJS({
     var { delay } = require_util8();
     var { kEnumerableProperty } = require_util();
     var { environmentSettingsObject } = require_util2();
+    var { getGlobalDispatcher } = require_global2();
     var experimentalWarned = false;
     var defaultReconnectionTime = 3e3;
     var CONNECTING = 0;
@@ -18774,6 +18857,7 @@ var require_eventsource = __commonJS({
           this.#state.origin = response.urlList[response.urlList.length - 1].origin;
           const eventSourceStream = new EventSourceStream({
             eventSourceSettings: this.#state,
+            maxEventSize: this.#dispatcher.eventSourceOptions?.maxEventSize,
             push: (event) => {
               this.dispatchEvent(createFastMessageEvent(
                 event.type,
@@ -18906,7 +18990,8 @@ var require_eventsource = __commonJS({
       {
         key: "dispatcher",
         // undici only
-        converter: webidl.converters.any
+        converter: webidl.converters.any,
+        defaultValue: () => getGlobalDispatcher()
       }
     ]);
     module2.exports = {
@@ -26515,6 +26600,7 @@ function readInputs(get = (n) => getInput(n), env = process.env) {
     matrix: matrix(get("matrix")),
     junit: list(get("junit")),
     junitName: get("junit-name").trim() || null,
+    coverage: list(get("coverage")),
     artifacts: list(get("artifacts")),
     attestations: orNull(get("attestations")),
     ownership: get("ownership").trim() || null,
@@ -30797,11 +30883,12 @@ var msg = (node) => {
   const m = typeof first === "object" ? first?.message ?? first?.["#text"] : first;
   return typeof m === "string" && m ? m.slice(0, 1e3) : null;
 };
-function walkSuite(suite, t) {
-  for (const inner of suite?.testsuite ?? []) walkSuite(inner, t);
+function walkSuite(suite, t, workspace) {
+  for (const inner of suite?.testsuite ?? []) walkSuite(inner, t, workspace);
   for (const tc of suite?.testcase ?? []) {
     t.durationSeconds = (t.durationSeconds ?? 0) + (Number(tc.time) || 0);
-    const failure = { suite: typeof tc.classname === "string" ? tc.classname : suite?.name ?? null, name: String(tc.name ?? "unnamed") };
+    const cleaned = workspace !== void 0 && typeof tc.file === "string" ? cleanSourcePath(workspace, tc.file) : null;
+    const failure = { suite: typeof tc.classname === "string" ? tc.classname : suite?.name ?? null, name: String(tc.name ?? "unnamed"), ...cleaned?.ok ? { file: cleaned.path } : {} };
     if (tc.failure) {
       t.failed++;
       if (t.failures.length < 50) t.failures.push({ ...failure, message: msg(tc.failure) });
@@ -30812,12 +30899,12 @@ function walkSuite(suite, t) {
     else t.passed++;
   }
 }
-function parseJUnitXml(xml) {
+function parseJUnitXml(xml, workspace) {
   const doc = parser.parse(xml);
   const t = empty();
   const roots = doc.testsuites ? [doc.testsuites] : [];
   if (doc.testsuite) roots.push({ testsuite: doc.testsuite });
-  for (const r of roots) walkSuite(r, t);
+  for (const r of roots) walkSuite(r, t, workspace);
   t.durationSeconds = Math.round((t.durationSeconds ?? 0) * 1e3) / 1e3;
   return t;
 }
@@ -30841,7 +30928,7 @@ async function junitAttestations(patterns, opts) {
       continue;
     }
     paths.push(r.file.path);
-    add(total, r.text === null ? empty() : parseJUnitXml(r.text));
+    add(total, r.text === null ? empty() : parseJUnitXml(r.text, opts.workspace));
   }
   if (!paths.length) return [];
   const clean = (p) => {
@@ -30852,6 +30939,231 @@ async function junitAttestations(patterns, opts) {
   const name = given ? given.slice(0, MAX_NAME) : "junit";
   const source = patterns.length === 1 ? clean(patterns[0]) : paths.length === 1 ? clean(paths[0]) : null;
   return [{ kind: "test-results", name, data: { ...total }, ...source ? { sourcePath: source } : {} }];
+}
+
+// ../prodgator-report/src/core/coverage.ts
+var CoverageError = class extends Error {
+};
+var MAX_COVERAGE_FILE_BYTES = 32 * 1024 * 1024;
+var MAX_FILES2 = 200;
+var MAX_TRACKED = 3e6;
+var parser2 = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "",
+  processEntities: false,
+  htmlEntities: false,
+  parseAttributeValue: false,
+  allowBooleanAttributes: true,
+  ignoreDeclaration: true,
+  ignorePiTags: true,
+  isArray: (name) => name === "package" || name === "class" || name === "line"
+});
+var empty2 = (format) => ({ format, linesCovered: 0, linesTotal: 0, branchesCovered: 0, branchesTotal: 0 });
+var wholeNumber = (v) => {
+  if (typeof v !== "string" || !/^\d{1,9}$/.test(v.trim())) return null;
+  return Number(v);
+};
+function track(map, key, hits, bc, bt) {
+  const prev = map.get(key);
+  if (prev) {
+    prev.hits = Math.max(prev.hits, hits);
+    if (bt > prev.bt || bt === prev.bt && bc > prev.bc) {
+      prev.bc = bc;
+      prev.bt = bt;
+    }
+    return;
+  }
+  if (map.size >= MAX_TRACKED) throw new CoverageError("has more executable lines than the report client reads");
+  map.set(key, { hits, bc, bt });
+}
+function sum(format, map) {
+  const t = empty2(format);
+  for (const s of map.values()) {
+    t.linesTotal++;
+    if (s.hits > 0) t.linesCovered++;
+    t.branchesTotal += s.bt;
+    t.branchesCovered += s.bc;
+  }
+  return t;
+}
+function parseCobertura(xml) {
+  if (/<!ENTITY/i.test(xml)) throw new CoverageError("declares XML entities, which are not supported");
+  let doc;
+  try {
+    doc = parser2.parse(xml);
+  } catch {
+    throw new CoverageError("is not valid XML");
+  }
+  const root = doc?.coverage === "" ? {} : doc?.coverage;
+  if (!root || typeof root !== "object") throw new CoverageError("is not a Cobertura report (no <coverage> element)");
+  const seen = /* @__PURE__ */ new Map();
+  for (const pkg of root.packages?.package ?? []) {
+    for (const cls of pkg?.classes?.class ?? []) {
+      const file = typeof cls?.filename === "string" ? cls.filename : typeof cls?.name === "string" ? cls.name : "";
+      for (const line of cls?.lines?.line ?? []) {
+        const number = wholeNumber(line?.number);
+        const hits = wholeNumber(line?.hits);
+        if (number === null || hits === null) continue;
+        let bc = 0;
+        let bt = 0;
+        if (String(line.branch).toLowerCase() === "true" && typeof line["condition-coverage"] === "string") {
+          const m = /\((\d{1,6})\/(\d{1,6})\)/.exec(line["condition-coverage"]);
+          if (m && Number(m[1]) <= Number(m[2])) {
+            bc = Number(m[1]);
+            bt = Number(m[2]);
+          }
+        }
+        track(seen, `${file}\0${number}`, hits, bc, bt);
+      }
+    }
+  }
+  if (seen.size) return sum("cobertura", seen);
+  const total = wholeNumber(root["lines-valid"]);
+  const covered = wholeNumber(root["lines-covered"]);
+  if (total === null || covered === null || covered > total) throw new CoverageError("has no line coverage data");
+  const t = { ...empty2("cobertura"), linesTotal: total, linesCovered: covered };
+  const bTotal = wholeNumber(root["branches-valid"]);
+  const bCovered = wholeNumber(root["branches-covered"]);
+  if (bTotal !== null && bCovered !== null && bCovered <= bTotal) {
+    t.branchesTotal = bTotal;
+    t.branchesCovered = bCovered;
+  }
+  return t;
+}
+function parseLcov(text) {
+  const lines = /* @__PURE__ */ new Map();
+  const branches = /* @__PURE__ */ new Map();
+  const t = empty2("lcov");
+  let sf = null;
+  let sawRecord = false;
+  let recordHasDa = false;
+  let recordHasBr = false;
+  let lf = null;
+  let lh = null;
+  let brf = null;
+  let brh = null;
+  const flush = () => {
+    if (sf === null) return;
+    if (!recordHasDa && lf !== null && lh !== null && lh <= lf) {
+      t.linesTotal += lf;
+      t.linesCovered += lh;
+    }
+    if (!recordHasBr && brf !== null && brh !== null && brh <= brf) {
+      t.branchesTotal += brf;
+      t.branchesCovered += brh;
+    }
+    sf = null;
+    recordHasDa = false;
+    recordHasBr = false;
+    lf = lh = brf = brh = null;
+  };
+  for (const raw of text.split("\n")) {
+    const line = raw.endsWith("\r") ? raw.slice(0, -1) : raw;
+    if (line.startsWith("SF:")) {
+      flush();
+      sf = line.slice(3);
+      sawRecord = true;
+      continue;
+    }
+    if (sf === null) continue;
+    if (line === "end_of_record") {
+      flush();
+      continue;
+    }
+    const colon = line.indexOf(":");
+    if (colon < 0) continue;
+    const tag = line.slice(0, colon);
+    const args = line.slice(colon + 1).split(",");
+    if (tag === "DA" && args.length >= 2) {
+      const n = wholeNumber(args[0]);
+      const hits = wholeNumber(args[1]);
+      if (n === null || hits === null) continue;
+      recordHasDa = true;
+      track(lines, `${sf}\0${n}`, hits, 0, 0);
+    } else if (tag === "BRDA" && args.length === 4) {
+      const n = wholeNumber(args[0]);
+      const block = wholeNumber(args[1]);
+      const branch = wholeNumber(args[2]);
+      const taken = args[3].trim() === "-" ? 0 : wholeNumber(args[3]);
+      if (n === null || block === null || branch === null || taken === null) continue;
+      recordHasBr = true;
+      const key = `${sf}\0${n}\0${block}\0${branch}`;
+      if (!branches.has(key) && branches.size >= MAX_TRACKED) throw new CoverageError("has more branches than the report client reads");
+      branches.set(key, Math.max(branches.get(key) ?? 0, taken));
+    } else if (tag === "LF") lf = wholeNumber(args[0]);
+    else if (tag === "LH") lh = wholeNumber(args[0]);
+    else if (tag === "BRF") brf = wholeNumber(args[0]);
+    else if (tag === "BRH") brh = wholeNumber(args[0]);
+  }
+  flush();
+  if (!sawRecord) throw new CoverageError("is not an LCOV report (no SF: records)");
+  const fromDa = sum("lcov", lines);
+  t.linesTotal += fromDa.linesTotal;
+  t.linesCovered += fromDa.linesCovered;
+  for (const taken of branches.values()) {
+    t.branchesTotal++;
+    if (taken > 0) t.branchesCovered++;
+  }
+  return t;
+}
+function parseCoverage(text) {
+  const body = text.charCodeAt(0) === 65279 ? text.slice(1) : text;
+  return body.trimStart().startsWith("<") ? parseCobertura(body) : parseLcov(body);
+}
+var percent = (covered, total) => Math.round(covered / total * 1e4) / 100;
+async function coverageAttestations(patterns, opts) {
+  if (!patterns.length) return [];
+  const files = (await opts.glob(patterns)).slice(0, MAX_FILES2);
+  const total = empty2("lcov");
+  const paths = [];
+  let problem = false;
+  for (const f of files) {
+    const r = await readWorkspaceText(opts.workspace, f, { maxBytes: MAX_COVERAGE_FILE_BYTES, display: displayName(opts.workspace, f) });
+    if (!r.ok) {
+      if (r.reason !== "missing") {
+        opts.warn(`${r.message} and was not read as coverage`);
+        problem = true;
+      }
+      continue;
+    }
+    if (r.text === null) {
+      opts.warn(`${r.file.path} is larger than ${MAX_COVERAGE_FILE_BYTES / (1024 * 1024)} MiB and was not read as coverage`);
+      problem = true;
+      continue;
+    }
+    try {
+      const t = parseCoverage(r.text);
+      total.linesCovered += t.linesCovered;
+      total.linesTotal += t.linesTotal;
+      total.branchesCovered += t.branchesCovered;
+      total.branchesTotal += t.branchesTotal;
+      paths.push(r.file.path);
+    } catch (e) {
+      if (!(e instanceof CoverageError)) throw e;
+      opts.warn(`${r.file.path} ${e.message}`);
+      problem = true;
+    }
+  }
+  if (problem) {
+    opts.warn("No coverage attestation was sent because not every coverage file could be read.");
+    return [];
+  }
+  if (!paths.length) {
+    opts.warn(`No coverage file matched ${patterns.join(", ")}; no coverage attestation was sent.`);
+    return [];
+  }
+  if (total.linesTotal === 0) {
+    opts.warn("The coverage files report no executable lines; no coverage attestation was sent.");
+    return [];
+  }
+  const data = { lines: percent(total.linesCovered, total.linesTotal) };
+  if (total.branchesTotal > 0) data.branches = percent(total.branchesCovered, total.branchesTotal);
+  const clean = (p) => {
+    const c = cleanSourcePath(opts.workspace, p);
+    return c.ok ? c.path : null;
+  };
+  const source = patterns.length === 1 ? clean(patterns[0]) : paths.length === 1 ? clean(paths[0]) : null;
+  return [{ kind: "coverage", name: "coverage", data, ...source ? { sourcePath: source } : {} }];
 }
 
 // ../prodgator-report/src/core/attestations.ts
@@ -31920,6 +32232,7 @@ var ReportError = class extends Error {
     this.name = "ReportError";
   }
 };
+var RUN_NOT_FOUND_EXTRA_ATTEMPTS = 2;
 var RETRY_STATUS = /* @__PURE__ */ new Set([429, 500, 502, 503, 504]);
 var MAX_RETRY_AFTER_MS = 6e4;
 function waitText(ms) {
@@ -31953,7 +32266,7 @@ async function requestJson(method, url, body, audience, deps) {
   const sleep = deps.sleep ?? wait;
   const max = deps.maxAttempts ?? 6;
   let last = null;
-  for (let attempt = 0; attempt < max; attempt++) {
+  for (let attempt = 0; attempt < (last?.code === "RUN_NOT_FOUND" && deps.maxAttempts === void 0 ? max + RUN_NOT_FOUND_EXTRA_ATTEMPTS : max); attempt++) {
     if (attempt > 0) await sleep(last?.retryAfterMs ?? Math.min(2e4, 2e3 * 2 ** (attempt - 1)));
     let res;
     try {
@@ -32152,14 +32465,15 @@ async function run(deps = {}) {
     const owned = inputs.ownership ? await ownershipFile(inputs.ownership, workspace) : null;
     if (owned?.attestation) attestations.push(owned.attestation);
     attestations.push(...await junitAttestations(inWorkspace(inputs.junit), { glob: actionsGlob, name: inputs.junitName ?? void 0, workspace, warn: (w) => c.warning(w) }));
-    const globbed = await collectArtifacts(inWorkspace(inputs.artifacts), workspace, { glob: actionsGlob });
+    attestations.push(...await coverageAttestations(inWorkspace(inputs.coverage), { glob: actionsGlob, workspace, warn: (w) => c.warning(w) }));
+    const globbed = await collectArtifacts(inWorkspace([...inputs.coverage, ...inputs.artifacts]), workspace, { glob: actionsGlob });
     [...scanned.warnings, ...owned?.warning ? [owned.warning] : [], ...globbed.warnings].forEach((w) => c.warning(w));
     const files = mergeFiles([...scanned.files, ...owned?.file ? [owned.file] : []], globbed.files, (w) => c.warning(w));
     const client = {
       getToken: (aud) => c.getIDToken(aud),
       fetch: deps.fetch,
       sleep: deps.sleep,
-      userAgent: `prodgator-report-action/${true ? "1.4.1" : "dev"}`
+      userAgent: `prodgator-report-action/${true ? "1.5.0" : "dev"}`
     };
     const request = buildIngestRequest({ job: { name: inputs.jobName, matrix: inputs.matrix, runner: env.RUNNER_NAME || null }, name: inputs.name, summary: summary3, attestations, files });
     const res = await sendReport(inputs.prodgatorUrl, "github", request, inputs.audience, client);

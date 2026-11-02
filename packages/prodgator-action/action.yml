@@ -1,0 +1,63 @@
+name: Prodgator report
+description: Send this job's summary, test results, attestations and artifacts to Prodgator, authenticated with GitHub OIDC (no secrets).
+author: Prodgator
+branding:
+  icon: activity
+  color: green
+inputs:
+  summary:
+    description: Markdown to send. Default - the summaries earlier steps of this job wrote to $GITHUB_STEP_SUMMARY.
+    required: false
+  summary-file:
+    description: Path to a markdown file in the workspace to send instead.
+    required: false
+  name:
+    description: Report name within the job (several steps can report separately).
+    required: false
+    default: default
+  job-name:
+    description: Job identifier. Default - GITHUB_JOB.
+    required: false
+  matrix:
+    description: In matrix jobs pass toJSON(matrix) so each leg keeps its own report.
+    required: false
+  junit:
+    description: Globs of JUnit XML files. Summed into one test-results attestation.
+    required: false
+  junit-name:
+    description: The name of the test-results attestation the JUnit files are summed into. Defaults to junit.
+    required: false
+  coverage:
+    description: Globs of Cobertura XML or LCOV coverage files. Summed into one coverage attestation (line and branch percentages), and the files are uploaded as artifacts.
+    required: false
+  artifacts:
+    description: Globs of files to upload (newline or comma separated).
+    required: false
+  attestations:
+    description: Attestations as inline JSON or a path to a JSON file (kinds test-results, coverage, sbom, scan, custom).
+    required: false
+  ownership:
+    description: Path of a CODEOWNERS file (or a Prodgator ownership JSON file) to send for code owners rules, for example .github/CODEOWNERS. Send it from a workflow that runs on pushes to your base branches.
+    required: false
+  prodgator-url:
+    description: Prodgator API URL. Default https://api.prodgator.io.
+    required: false
+  audience:
+    description: OIDC audience. Default - the origin of the URL in use.
+    required: false
+  fail-on-error:
+    description: Fail the step when the report cannot be sent.
+    required: false
+    default: 'false'
+  blame:
+    description: Run git blame on the code findings of SARIF scan files and send the commit that introduced each one. Set to false to skip it.
+    required: false
+    default: 'true'
+outputs:
+  report-id:
+    description: The Prodgator report id.
+  report-url:
+    description: Link to the pipeline run in Prodgator.
+runs:
+  using: node24
+  main: dist/index.js

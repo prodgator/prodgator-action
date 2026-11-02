@@ -68,6 +68,7 @@ With several build and test jobs, add a `report` job with `needs: [build, test]`
 | `matrix` | (none) | In matrix jobs, pass `${{ toJSON(matrix) }}` so each leg keeps its own report. |
 | `junit` | (none) | Globs of JUnit XML files. The files are summed into one `test-results` attestation. |
 | `junit-name` | (none) | The name of the `test-results` attestation the JUnit files are summed into. Default: `junit`. |
+| `coverage` | (none) | Globs of Cobertura XML or LCOV files. The files are summed into one `coverage` attestation (line and branch percentages) and uploaded as artifacts. |
 | `artifacts` | (none) | Globs of files to upload (newline or comma separated). |
 | `attestations` | (none) | Attestations as inline JSON or a path to a JSON file. See Attestation kinds below. |
 | `ownership` | (none) | Path of a `CODEOWNERS` file or a Prodgator ownership JSON file, sent for code owners rules on pull requests. See Ownership reports below. |
@@ -217,3 +218,25 @@ When you don't pass `summary` or `summary-file`, the action reads the sibling `s
 - **`RUN_NOT_FOUND`, then the action succeeds anyway**: Prodgator had not yet received this run's webhook when the report arrived. The action retries for about 90 seconds; if it still fails, the job step warns (or fails, with `fail-on-error: true`) but does not block the workflow.
 - **"Add `permissions: id-token: write`..."**: the job or workflow is missing OIDC permissions. Add `permissions: id-token: write` at the job or workflow level.
 - **GitHub Enterprise Server with a custom OIDC issuer**: not supported yet. The action expects `github.com`'s OIDC issuer.
+
+## Verify this bundle
+
+This repository holds the action's source in `packages/`, next to the bundle the workflow runs (`dist/index.js`). `VERSION` names the version the bundle reports, and `SOURCE_COMMIT` names the upstream commit the files were taken from. A Verify dist workflow rebuilds `dist` on every push and pull request and fails on any difference in `dist/`, `action.yml`, `LICENSE` or `SECURITY.md`, or when `VERSION` does not match the package version.
+
+## Rebuild from this repository
+
+The build is reproducible byte for byte. With Node.js 24, from a clone at the commit or tag you use:
+
+```bash
+npm ci --prefix packages/prodgator-report
+npm ci --prefix packages/prodgator-action
+(cd packages/prodgator-action && ACTION_VERSION="$(cat ../../VERSION)" npm run build)
+diff -r dist packages/prodgator-action/dist
+diff action.yml packages/prodgator-action/action.yml
+```
+
+Both `diff` commands print nothing when the bundle matches the source. To run the tests:
+
+```bash
+(cd packages/prodgator-action && npm test)
+```
